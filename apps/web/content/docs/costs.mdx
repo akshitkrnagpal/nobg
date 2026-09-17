@@ -1,28 +1,28 @@
 ---
-title: Cloudflare requirements and costs
-description: Understand what you need to enable before deploying the API.
+title: Requirements and costs
+description: Check Cloudflare access and billing before deploying the API.
 ---
 
-## Website
+## Cloudflare account
 
-The landing page and docs are static files. They do not use Cloudflare Images or invoke the background-removal API. Hosting them does not require enabling image processing.
+You need permission to deploy Workers, set Worker secrets, and use Cloudflare Images transformations through the Images binding. Confirm that your account has the access required for foreground segmentation before sending image-processing requests.
 
-## API
+A custom domain is optional. The Worker can use its Cloudflare-provided `workers.dev` URL.
 
-The Worker requires access to Cloudflare Images transformations through the Images binding. Confirm the current plan requirements for your account in Cloudflare before deploying. Enabling a paid service is a separate action from building nobg locally.
+## What you pay for
 
-Cloudflare bills your account directly. nobg does not add its own credit system or payment layer.
+Cloudflare bills your account for Workers and Images usage under your enabled plans. nobg adds no payment layer and requires no database or upload bucket.
 
-Read the current sources rather than treating a price copied into this repository as a quote:
+Check the current plan requirements and rates:
 
 - [Cloudflare Images pricing](https://developers.cloudflare.com/images/pricing/)
 - [Cloudflare Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/)
 - [Images limits and supported formats](https://developers.cloudflare.com/images/get-started/limits/)
 
-Actual charges depend on the services and plan you enable, transformation usage, and Worker usage. The repository adds no persistent storage requirements.
+The rate limiter is approximate and local to Cloudflare locations. It limits bursts, not monthly spending. Review account usage as you add clients.
 
-## Before enabling paid processing
+## What you can check before image processing
 
-The API has been tested locally with mocks. Real background removal, output quality, latency, and account-specific access have not been validated. Once you choose to enable Images, check those with your own representative sample images.
+Installing dependencies, running local tests, and building the API do not call Cloudflare Images. After deploying, `/api/health` and the authentication check in the [deployment guide](/docs/quickstart/#5-check-the-endpoint-without-processing-an-image) do not process an image. Deployed requests still use Workers.
 
-The rate limiter is approximate and local to Cloudflare locations. It reduces request bursts but is not a strict monthly spending limit.
+The API has been tested locally with mocked Images responses. Paid-service access, background-removal quality, and production latency have not been validated for this release. The guide's image upload step is optional until you are ready to enable and use that service.

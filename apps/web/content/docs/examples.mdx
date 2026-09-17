@@ -3,13 +3,17 @@ title: Code examples
 description: Call nobg from your backend with tools you already use.
 ---
 
-Replace the example host with your deployed Worker URL. Store your key as `NOBG_API_KEY` in your server environment. Never embed an operator API key in browser code.
+After [deploying the Worker](/docs/quickstart/), set `NOBG_URL` to its base URL with no trailing slash and load `NOBG_API_KEY` from your secret manager. Use these variables in your backend environment. Do not put the key in browser code.
+
+```sh
+export NOBG_URL="https://nobg-api.YOUR-SUBDOMAIN.workers.dev"
+```
 
 ## curl
 
 ```sh
 curl --fail-with-body \
-  https://YOUR-WORKER.workers.dev/api/v1/remove-background \
+  "$NOBG_URL/api/v1/remove-background" \
   -H "Authorization: Bearer $NOBG_API_KEY" \
   -F "image=@photo.jpg" \
   -F "format=webp" \
@@ -30,7 +34,7 @@ form.set('image', new Blob([await readFile('photo.jpg')], {
 form.set('format', 'png');
 
 const response = await fetch(
-  'https://YOUR-WORKER.workers.dev/api/v1/remove-background',
+  `${process.env.NOBG_URL}/api/v1/remove-background`,
   {
     method: 'POST',
     headers: { Authorization: `Bearer ${process.env.NOBG_API_KEY}` },
@@ -56,7 +60,7 @@ import requests
 
 with open("photo.jpg", "rb") as image:
     response = requests.post(
-        "https://YOUR-WORKER.workers.dev/api/v1/remove-background",
+        f"{os.environ['NOBG_URL']}/api/v1/remove-background",
         headers={"Authorization": f"Bearer {os.environ['NOBG_API_KEY']}"},
         files={"image": ("photo.jpg", image, "image/jpeg")},
         data={"format": "png"},

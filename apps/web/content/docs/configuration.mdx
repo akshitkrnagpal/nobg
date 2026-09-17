@@ -1,47 +1,78 @@
 ---
-title: Configuration
-description: Secrets, limits, and separate deployment settings.
+title: Worker configuration
+description: Set the Worker name, account, bindings, upload limits, and domain.
 ---
 
-## API settings
+The deployment configuration is `apps/api/wrangler.jsonc`. Commands using `pnpm --filter @nobg/api` run in that directory and use this file.
 
-Configuration lives in `apps/api/wrangler.jsonc`.
+## Worker settings
 
 | Setting | Default | Purpose |
 | --- | --- | --- |
-| `name` | `nobg-api` | Cloudflare Worker name |
-| `IMAGES` | Images binding | Inspects and transforms image bytes |
-| `MAX_UPLOAD_BYTES` | `10485760` | File size cap, 10 MiB |
-| `RATE_LIMITER` | 30 requests / 60 seconds | Limits authenticated upload attempts |
-| Rate limiter namespace | `1001` | Set this to an unused namespace in your account |
-| Observability sample rate | `0.1` | Samples Worker observability events |
+| `name` | `nobg-api` | Identifies the API Worker in your account |
+| `account_id` | Not set | Pin the target account if your login has access to several |
+| `main` | `src/index.ts` | Hono Worker entrypoint |
+| `compatibility_flags` | `nodejs_compat` | Enables the Node.js crypto API used for key comparison |
+| `workers_dev` | `true` | Publishes a `workers.dev` endpoint |
+| `images.binding` | `IMAGES` | Gives the handler access to Cloudflare Images |
+| `vars.MAX_UPLOAD_BYTES` | `10485760` | File size cap, 10 MiB |
+| `ratelimits[0].name` | `RATE_LIMITER` | Binding used to limit upload attempts |
+| `ratelimits[0].namespace_id` | `1001` | Rate limiter namespace within your account |
+| `ratelimits[0].simple` | 30 requests / 60 seconds | Limit shared by authenticated clients at each Cloudflare location |
+| `observability.head_sampling_rate` | `0.1` | Worker observability sampling rate |
 
-`MAX_UPLOAD_BYTES` must be a positive integer no larger than `20971520`, Cloudflare's documented 20 MiB binding input limit. The request body allowance adds 64 KiB for multipart headers; exceeding either cap is rejected.
-
-The application also limits decoded images to 25 megapixels. Change the shared constant in `packages/contracts` if you deliberately want a different policy.
+Keep the `IMAGES` and `RATE_LIMITER` names unless you also change the handler. The Images binding accepts uploaded bytes, so you do not need to store the image or give it a public URL. See [Cloudflare's Images binding setup](https://developers.cloudflare.com/images/optimization/binding/).
 
 ## API key
 
-`API_KEY` is a secret, not a Wrangler `vars` value. Use a random string with at least 32 characters. Missing keys, short keys, and the example placeholder all fail closed with `503 not_configured`.
-
-For local development, put it in `apps/api/.dev.vars`. In Cloudflare, use:
+`API_KEY` is a Worker secret. Create or replace it with:
 
 ```sh
 pnpm --filter @nobg/api exec wrangler secret put API_KEY
 ```
 
-One key authorizes the service. There are no per-user keys, accounts, or usage dashboards.
+Use a random value with at least 32 characters. A missing key, short key, or the example placeholder causes `503 not_configured` on the upload endpoint. The public health endpoint still responds.
+
+One key authorizes the service. There are no per-user keys or accounts. See [key rotation](/docs/operations/#rotate-the-api-key) before replacing a key used by existing clients.
+
+## Upload limits
+
+`MAX_UPLOAD_BYTES` must be an integer from `1` through `20971520`, the upper limit enforced by nobg. The default is 10 MiB. Request bodies have an additional 64 KiB allowance for multipart headers.
+
+Decoded images are limited to 25 megapixels. That limit lives in `packages/contracts/src/index.ts` and requires a code change and deployment to adjust.
 
 ## Rate limits
 
-The limit applies to the service's authenticated requests within each Cloudflare location. It is approximate and is not a global billing cap. All clients of this single-key deployment share the limit. Use Cloudflare's account controls and monitor usage if you need cost oversight.
+Choose a numeric `namespace_id` that is unused by other rate limiters in your account. Deployments sharing a namespace and the same key share counters. nobg uses one counter key for all authenticated upload attempts, including requests that later fail validation.
 
-## Website settings
+Cloudflare's limiter is approximate and local to each Cloudflare location. It is not a global request quota or spending cap. See [Cloudflare's rate limiting binding](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/).
 
-`apps/web/wrangler.jsonc` deploys static assets as `nobg`. It contains no image binding, API secret, or API code. The root `pnpm run deploy` command only publishes this website.
+## Custom domain
 
-After changing binding configuration, regenerate API types:
+You can start with the `workers.dev` URL. To use your own hostname, your domain must be an active Cloudflare zone. Add a `routes` entry to `apps/api/wrangler.jsonc`:
+
+```json
+{
+  "routes": [
+    { "pattern": "api.example.com", "custom_domain": true }
+  ]
+}
+```
+
+Merge this field into the existing configuration and replace `api.example.com` with your hostname. Redeploy, then update `NOBG_URL` and your backend configuration. Cloudflare provisions DNS and a certificate for the [Worker custom domain](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/).
+
+The existing `workers.dev` endpoint remains enabled while `workers_dev` is `true`.
+
+## Apply configuration changes
+
+After editing bindings, regenerate types and check the Worker:
 
 ```sh
 pnpm --filter @nobg/api types
+pnpm --filter @nobg/api typecheck
+pnpm --filter @nobg/api test
+pnpm --filter @nobg/api build
+pnpm --filter @nobg/api run deploy
 ```
+
+Keep your account-specific configuration in your checkout. Review changes to it when upgrading.

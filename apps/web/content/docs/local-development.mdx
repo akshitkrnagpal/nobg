@@ -1,47 +1,43 @@
 ---
-title: Local development
-description: Work on the website and Worker without calling paid image processing.
+title: Test the Worker locally
+description: Develop the API and run checks without calling paid image processing.
 ---
 
-## Set up the workspace
+Local testing is optional before deploying an unchanged checkout. It is useful when you modify the handler or configuration.
+
+## Start the local API
+
+From the repository root:
 
 ```sh
-pnpm install
+pnpm install --frozen-lockfile
 cp apps/api/.dev.vars.example apps/api/.dev.vars
 ```
 
-Replace the example value in `.dev.vars` with a randomly generated API key of at least 32 characters. This file is ignored by Git. The supplied placeholder is rejected by the API.
+Replace the placeholder in `apps/api/.dev.vars` with a random key of at least 32 characters. This file is ignored by Git and only supplies local secrets.
 
 ```sh
-pnpm dev
-```
-
-- Website: `http://localhost:4321`
-- Hono API: `http://localhost:8787`
-
-The website does not call the API. You can run either app independently:
-
-```sh
-pnpm --filter @nobg/web dev
 pnpm --filter @nobg/api dev
 ```
 
-## Image processing is not simulated as success
+The API listens at `http://localhost:8787`. Check it with:
 
-The API uses local Wrangler bindings. Cloudflare's offline Images implementation does not support background segmentation. A local upload may return `502 processing_failed` at the transformation step. nobg does not return your original image and pretend its background was removed.
+```sh
+curl --fail-with-body http://localhost:8787/api/health
+```
 
-Tests mock the Images binding to verify HTTP behavior without sending images to Cloudflare. They do not validate segmentation quality or production availability. No remote validation has been performed for this release.
+## Run checks
 
-## Commands
+```sh
+pnpm --filter @nobg/api typecheck
+pnpm --filter @nobg/api test
+pnpm --filter @nobg/api build
+```
 
-| Command | What it does |
-| --- | --- |
-| `pnpm check` | Lint, typecheck, and run API tests |
-| `pnpm build` | Build the static website and dry-run the API bundle |
-| `pnpm test` | Run local API tests |
-| `pnpm format` | Format supported source files |
-| `pnpm preview` | Preview the built website locally |
-| `pnpm run deploy` | Build and publish the website only |
-| `pnpm --filter @nobg/api types` | Regenerate types after editing API Wrangler bindings |
+Tests mock the Images binding to check authentication, validation, errors, and response handling. The build command runs `wrangler deploy --dry-run` and writes a local bundle. Neither command deploys a Worker.
 
-`pnpm build` does not deploy either app. The API's `dev` command uses `--local`; no remote bindings are configured.
+## Local image-processing limits
+
+The local Wrangler runtime does not support background segmentation. An upload can fail at the Images inspection or transformation stage even when the HTTP request is correct. A passing mocked test does not establish background-removal quality or access to the deployed Images service.
+
+The API's development command uses `--local` and the config has no remote bindings. Use the [deployment guide](/docs/quickstart/) when you are ready to publish the Worker. Configure `API_KEY` as a Cloudflare secret separately; `.dev.vars` is not uploaded.

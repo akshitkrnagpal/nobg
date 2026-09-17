@@ -1,7 +1,27 @@
 ---
 title: Troubleshooting
-description: Diagnose configuration and request errors.
+description: Resolve deployment, configuration, and image-processing errors.
 ---
+
+## Wrangler cannot deploy
+
+Confirm the account your CLI is using:
+
+```sh
+pnpm --filter @nobg/api exec wrangler whoami
+```
+
+Check your account permissions and the `account_id`, Worker name, and binding configuration in `apps/api/wrangler.jsonc`. If Cloudflare rejects the Images binding, confirm the account's Images access before retrying. See [requirements and costs](/docs/costs/).
+
+## The endpoint returns 404
+
+Use the API URL printed by this command:
+
+```sh
+pnpm --filter @nobg/api run deploy
+```
+
+The health route is `/api/health`; background removal requires `POST /api/v1/remove-background`. Other paths and unsupported methods return `404`. The documentation host does not serve these API routes.
 
 ## 503 not_configured
 
@@ -33,12 +53,12 @@ Wait for the `Retry-After` interval. The default is 30 authenticated attempts pe
 
 ## 502 processing_failed locally
 
-Background segmentation is not available in Cloudflare's offline Images implementation. Local validation and mocked tests can pass while an actual local transform fails. This is expected; the original image is never substituted as a fake result.
+Background segmentation is not available in the local Images implementation. Mocked tests can pass while a local upload fails during inspection or transformation. See [local testing](/docs/local-development/).
 
 ## 502 processing_failed after deployment
 
 Check that Images is enabled for the account, the `IMAGES` binding exists, and the required paid access is available. If those are correct, retry with a small, valid image. Keep the `X-Request-Id` when investigating failures. The public health endpoint only checks liveness.
 
-## The website works but the API returns 404
+## Investigate a failed request
 
-The website is deployed separately. Send image requests to the API Worker's URL, not the documentation site's URL.
+Keep the response status, JSON error code, and `X-Request-Id`. Use [Worker logs and deployment history](/docs/operations/) to check what is running. Do not include the API key or image contents in a bug report.

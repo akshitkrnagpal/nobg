@@ -1,29 +1,33 @@
 ---
-title: Background removal, on your terms.
-description: A small API that runs in your own Cloudflare account.
+title: Deploy your own API
+description: Run nobg as a Cloudflare Worker in your account.
 ---
 
-nobg accepts an image and returns a transparent PNG or WebP. You deploy a Hono Worker, configure an API key, and call it from your backend. Cloudflare Images removes the background with `segment: "foreground"`.
+nobg is a background removal API you deploy to Cloudflare Workers. Your backend uploads an image with an API key, and the Worker returns a transparent PNG or WebP using Cloudflare Images.
 
-## Start here
+[Follow the deployment guide](/docs/quickstart/) to install the project, configure your Worker, and publish the API.
 
-- [Self-host nobg](/docs/quickstart/): configure and deploy your API.
-- [API reference](/docs/api/): upload fields, authentication, formats, and errors.
-- [Code examples](/docs/examples/): curl, JavaScript, and Python.
-- [Local development](/docs/local-development/): run the monorepo without paid image processing.
+## What you need
 
-## What you run
+- Access to the [nobg repository](https://github.com/akshitkrnagpal/nobg), Node.js, and pnpm.
+- A Cloudflare account with permission to deploy Workers.
+- Cloudflare Images access for background removal. Check [requirements and costs](/docs/costs/) before enabling it.
 
-The pnpm workspace contains two independently deployable apps. `apps/web` is this static Astro and Fumadocs website. `apps/api` is the Hono service. Only the API needs a Cloudflare Images binding.
+## What gets deployed
 
-There is no database, upload bucket, billing system, or user account system. The operator creates one API key and keeps it in a Worker secret. Images pass through the request and are not saved by nobg.
+You deploy one Hono Worker from `apps/api`. It has an Images binding, a rate limiter, and an API key stored as a Worker secret. There is no database or upload bucket to provision.
 
-## What self-hosted means
+The API runs independently of this documentation site. You do not need to build or host the website to use it. All deployment commands in these guides target `@nobg/api` explicitly.
 
-The code and deployment live under your control. Image processing still runs on Cloudflare's managed Images service. You need a Cloudflare account with the required Images access, and Cloudflare bills your account directly. This is not an offline background removal model.
+## After deployment
 
-## Current validation status
+- [Call the API](/docs/examples/) from curl, JavaScript, or Python.
+- [Configure your Worker](/docs/configuration/) to adjust limits or add a domain.
+- [Operate the service](/docs/operations/) to inspect logs, rotate the key, and deploy updates.
+- [Troubleshoot errors](/docs/troubleshooting/) using the response code and request ID.
 
-The API is implemented and tested locally with mocked Images responses. Background removal against the paid Cloudflare service has **not been validated**. Output quality, production latency, and account-specific availability still need a real deployment check once you enable the service.
+## Processing and validation
 
-The homepage's plant comparison is an illustration, not a measured output from Cloudflare.
+You control the Worker and API key. Cloudflare's managed Images service processes the image bytes and bills your account for usage. nobg does not store uploads or results.
+
+The API has been tested locally with mocked Images responses. Background removal against the paid service has not been validated for this release. The deployment guide separates checks that do not call Images from an optional image-processing request.

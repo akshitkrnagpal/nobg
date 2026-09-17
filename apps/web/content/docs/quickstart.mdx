@@ -1,71 +1,108 @@
 ---
-title: Self-host nobg
-description: Set up the API in your own Cloudflare account.
+title: Deploy the API Worker
+description: Configure and deploy nobg, set its secret, and check your endpoint.
 ---
 
-## Prerequisites
+Run the commands below from the repository root. They deploy the API Worker in `apps/api`.
 
-- Node.js 22.14 or newer and pnpm 11.
-- A checkout of this repository.
-- A Cloudflare account with Workers access and the required Images subscription or entitlement.
+## 1. Prepare your account and checkout
 
-Read [costs](/docs/costs/) before enabling paid services. Building locally does not require a subscription. The website deployment and API deployment are separate.
-
-## Install and check
-
-From the repository root:
+You need Node.js 22.14 or newer, pnpm 11, Git, and access to the repository, which is currently private. Use the pnpm version pinned in the root `package.json`.
 
 ```sh
-pnpm install
-pnpm check
-pnpm build
+git clone https://github.com/akshitkrnagpal/nobg.git
+cd nobg
+pnpm install --frozen-lockfile
 ```
 
-## Configure your Worker
+Your Cloudflare account needs Workers access and the Images access required for background removal. Review [requirements and costs](/docs/costs/). Installing dependencies and running local checks do not call the paid Images service.
 
-Edit `apps/api/wrangler.jsonc`. Choose a Worker name if `nobg-api` is already in use. The file includes the `IMAGES` binding, a default 10 MiB upload limit, and a rate limiter allowing 30 requests per minute per Cloudflare location.
-
-Set a rate limiter `namespace_id` unique to this application in your Cloudflare account. Workers sharing a namespace and key also share counters.
-
-## Log in and deploy
-
-These are manual instructions for deploying your own API. The project's root `pnpm run deploy` command publishes **only the website**.
+Log in and confirm the account you will deploy into:
 
 ```sh
 pnpm --filter @nobg/api exec wrangler login
+pnpm --filter @nobg/api exec wrangler whoami
+```
+
+## 2. Configure the Worker
+
+Open `apps/api/wrangler.jsonc` and review these settings:
+
+| Setting | What to do |
+| --- | --- |
+| `name` | Keep `nobg-api` or choose a name that does not conflict with another Worker in your account. |
+| `images.binding` | Keep `IMAGES`, the binding name used by the handler. |
+| `ratelimits[0].namespace_id` | Choose a numeric namespace ID unused by your other rate limiters. The example is `1001`. |
+| `vars.MAX_UPLOAD_BYTES` | Keep `10485760` for a 10 MiB file limit, or adjust it within the supported range. |
+
+Keep `main`, `compatibility_flags`, and both binding names as supplied. If Wrangler can access multiple accounts, add your intended `account_id` to this file. See [Worker configuration](/docs/configuration/) for the full settings.
+
+## 3. Check and deploy
+
+```sh
+pnpm --filter @nobg/api typecheck
+pnpm --filter @nobg/api test
+pnpm --filter @nobg/api build
 pnpm --filter @nobg/api run deploy
 ```
 
-Wrangler prints your API's `workers.dev` URL. The removal endpoint returns `503 not_configured` until you add the API key.
+The `build` command bundles the API with Wrangler's `--dry-run` option. The `deploy` command publishes it. Tests use mocked Images responses.
 
-## Set your API key
+Wrangler prints a URL such as `https://nobg-api.YOUR-SUBDOMAIN.workers.dev`. Save that URL. The upload endpoint returns `503 not_configured` until you set the API key.
 
-Generate a random key with at least 32 characters using your password manager. Store it securely and paste it into Wrangler's secret prompt:
+Use the filtered deploy command above. The repository's root `pnpm run deploy` command publishes the documentation website.
+
+## 4. Set the API key
+
+Generate a random key of at least 32 characters in your password manager. Keep a copy there and paste it into Wrangler's interactive prompt:
 
 ```sh
 pnpm --filter @nobg/api exec wrangler secret put API_KEY
 ```
 
-Do not put the key in source control or frontend JavaScript. To rotate the key, run this command again. The old key stops working after the new deployment takes effect.
+`API_KEY` belongs to this Worker. Do not put it in `wrangler.jsonc`, Git, or frontend JavaScript. A local `.dev.vars` file does not configure a deployed Worker's secrets.
 
-## Make a request
+## 5. Check the endpoint without processing an image
 
-Set `NOBG_API_KEY` in your shell using your secret manager, and replace the example host with your Worker URL:
+Set `NOBG_URL` to the URL Wrangler printed, with no trailing slash:
+
+```sh
+export NOBG_URL="https://nobg-api.YOUR-SUBDOMAIN.workers.dev"
+curl --fail-with-body "$NOBG_URL/api/health"
+```
+
+Expect:
+
+```json
+{ "status": "ok", "service": "nobg", "version": "0.1.0" }
+```
+
+This confirms the Worker responds. It does not verify the key, Images binding, or paid-service access.
+
+Load the same key into your shell as `NOBG_API_KEY` using your secret manager. To check authentication without uploading an image:
+
+```sh
+curl --include --request POST \
+  "$NOBG_URL/api/v1/remove-background" \
+  -H "Authorization: Bearer $NOBG_API_KEY"
+```
+
+Expect `400 invalid_request` because the body is missing. That response means the request passed the key check. `401` means the key did not match; `503` means the Worker is not configured. This request does not call Images, but it counts toward the rate limit.
+
+## 6. Process an image when you are ready
+
+This step calls Cloudflare Images and may incur charges. You can stop after the checks above until your account has the required access.
+
+With `photo.jpg` in your working directory:
 
 ```sh
 curl --fail-with-body \
-  https://YOUR-WORKER.workers.dev/api/v1/remove-background \
+  "$NOBG_URL/api/v1/remove-background" \
   -H "Authorization: Bearer $NOBG_API_KEY" \
   -F "image=@photo.jpg" \
   --output nobg.png
 ```
 
-A successful response is a PNG file. If the request fails, the response body is JSON; don't mistake that file for an image.
+A successful response contains PNG bytes. On failure, the saved body is JSON describing the error. Inspect it before treating the file as an image. Add `-F "format=webp"` and use a `.webp` output filename for WebP.
 
-## Add a domain later
-
-Open the API Worker in Cloudflare and add a custom domain under **Settings → Domains & Routes**. Use a separate hostname such as `api.example.com` for the API and `example.com` for the documentation website. Update callers to use the new API URL.
-
-## Upgrade
-
-Keep a copy of your Wrangler configuration. Pull the new release, run `pnpm install --frozen-lockfile`, `pnpm check`, and `pnpm build`, then deploy the app you want to update. Secrets remain in Cloudflare. Review configuration changes before each upgrade.
+See [code examples](/docs/examples/) to integrate your backend, [configuration](/docs/configuration/#custom-domain) to add a domain, or [operations](/docs/operations/) to maintain the Worker.

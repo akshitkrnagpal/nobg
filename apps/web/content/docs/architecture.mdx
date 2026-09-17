@@ -1,16 +1,19 @@
 ---
-title: Architecture
-description: Two apps, with one Worker for image processing.
+title: How the Worker works
+description: The request path, Cloudflare bindings, and image data handling.
 ---
 
 ```text
-apps/web                       apps/api
-Astro + Fumadocs                Hono + Cloudflare Worker
-  ↓ static build                 ↑ authenticated upload
-Cloudflare static assets         ↓ Images binding
-Landing page + documentation   segment: foreground
-                                 ↓ binary PNG / WebP
-                               Your backend
+Your backend
+  | POST image + Bearer API key
+  v
+nobg Worker (Hono)
+  | authenticate, rate-limit, validate
+  v
+Cloudflare Images binding
+  | segment: foreground
+  v
+Transparent PNG or WebP returned to your backend
 ```
 
 ## Request lifecycle
@@ -23,16 +26,16 @@ Landing page + documentation   segment: foreground
 6. Send the bytes through the Images binding using `segment: "foreground"`.
 7. Return the binary image with a download filename.
 
-The service uses the [Cloudflare Images binding](https://developers.cloudflare.com/images/optimization/binding/). Uploads do not need a public URL. Cloudflare documents background removal as the [foreground segmentation option](https://developers.cloudflare.com/images/optimization/features/#segment).
+The service uses the [Cloudflare Images binding](https://developers.cloudflare.com/images/optimization/binding/) to process uploaded bytes without a public image URL. Background removal uses [foreground segmentation](https://developers.cloudflare.com/images/optimization/features/#segment).
 
 ## Data handling
 
-nobg does not save uploads or outputs to R2, D1, KV, or Cloudflare Images storage. It buffers a bounded upload for validation and returns the processed stream. Responses use `no-store`. This describes nobg's behavior; Cloudflare still processes the bytes under its own service policies.
+nobg does not save uploads or outputs to R2, D1, KV, or Cloudflare Images storage. It buffers a bounded upload for validation and returns the processed stream with `Cache-Control: no-store`. Cloudflare processes the bytes under its service policies.
 
-Application error logs contain an event name and request ID. They do not contain image bytes, filenames, keys, or provider error messages. Cloudflare may still record platform request metadata through observability.
+Unexpected application errors log an event name and request ID. These logs do not include image bytes, filenames, keys, or provider error messages. Cloudflare may record platform request metadata through observability.
 
-## Deployment separation
+## Deployment contents
 
-The website and API have different Wrangler configs and Worker names. Publishing the site cannot deploy the image API. The API has no dependency on the website and can be self-hosted independently.
+`apps/api/src/index.ts` contains the handler. `apps/api/wrangler.jsonc` declares its Images and rate limiter bindings. `packages/contracts` supplies formats, limits, and error types used by the handler and OpenAPI document.
 
-`packages/contracts` holds shared formats, limits, and error types. The OpenAPI endpoint is built from the same constants used by the handler.
+This is a single Worker deployment. There is no dependency on the documentation website at runtime.

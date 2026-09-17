@@ -2,16 +2,18 @@
   "title": "nobg",
   "pages": [
     "index",
-    "---Get started---",
+    "---Deploy---",
+    "costs",
     "quickstart",
-    "local-development",
+    "configuration",
     "---Use the API---",
     "api",
     "examples",
-    "---Run your own---",
-    "configuration",
+    "---Operate---",
+    "operations",
+    "troubleshooting",
+    "---Development---",
     "architecture",
-    "costs",
-    "troubleshooting"
+    "local-development"
   ]
 }
