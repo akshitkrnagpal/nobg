@@ -13,6 +13,7 @@ const {
   title = "nobg · Self-hosted background removal",
   description = "Run a background removal API in your Cloudflare account. Send an image and receive a transparent PNG or WebP.",
 } = Astro.props;
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 ---
 
 <!doctype html>
@@ -23,9 +24,11 @@ const {
     <meta name="theme-color" content="#f8f9f5" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <ClientRouter />
   </head>

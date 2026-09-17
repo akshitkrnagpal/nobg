@@ -24,6 +24,7 @@ const remarkPlugins = [
 const rehypePlugins = [rehypeCode];
 
 export default defineConfig({
+  site: "https://nobg.akshit.io",
   markdown: {
     syntaxHighlight: false,
     processor: unified({

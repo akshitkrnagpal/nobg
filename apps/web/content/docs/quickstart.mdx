@@ -31,6 +31,7 @@ Open `apps/api/wrangler.jsonc` and review these settings:
 | Setting | What to do |
 | --- | --- |
 | `name` | Keep `nobg-api` or choose a name that does not conflict with another Worker in your account. |
+| `routes` | Remove the supplied `api.nobg.akshit.io` route to use your `workers.dev` URL, or replace it with a hostname in your own Cloudflare zone. |
 | `images.binding` | Keep `IMAGES`, the binding name used by the handler. |
 | `durable_objects` and `migrations` | Keep the supplied `QUOTAS` binding and SQLite class migration. |
 | Quota variables | Defaults are 5 requests/minute and 20 image attempts/day per IP, plus 10,000 image attempts/month across the service. |

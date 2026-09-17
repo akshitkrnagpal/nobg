@@ -1,6 +1,6 @@
 # nobg
 
-[Website](https://nobg.akntech.workers.dev) · [Documentation](https://nobg.akntech.workers.dev/docs/)
+[Website](https://nobg.akshit.io) · [Documentation](https://nobg.akshit.io/docs/) · [API health](https://api.nobg.akshit.io/api/health)
 
 Background removal in your own Cloudflare account. Send an image to a Hono API and receive a transparent PNG or WebP, using the Cloudflare Images binding.
 
@@ -36,9 +36,9 @@ pnpm run deploy
 
 This builds and publishes **only the static website** as `nobg`. It does not deploy the API or enable paid image processing. The website has no live upload interface.
 
-## Self-host the API later
+## Self-host the API
 
-Enable the required Cloudflare Images access in your account first. Review current [Images pricing](https://developers.cloudflare.com/images/pricing/). Then follow [the deployment guide](apps/web/content/docs/quickstart.mdx).
+Enable the required Cloudflare Images access in your account first. Review current [Images pricing](https://developers.cloudflare.com/images/pricing/). Remove or replace the `api.nobg.akshit.io` route in `apps/api/wrangler.jsonc` with your own hostname, then follow [the deployment guide](apps/web/content/docs/quickstart.mdx).
 
 ```sh
 pnpm --filter @nobg/api run deploy
