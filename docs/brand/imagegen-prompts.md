@@ -5,7 +5,7 @@ Generated with the built-in imagegen tool. These are transparent raster PNGs, no
 - [Icon](../../apps/web/public/brand/nobg-icon-v1.png)
 - [Horizontal logo](../../apps/web/public/brand/nobg-logo-v1.png)
 
-The icon depicts a foreground tile separating from its background frame. The logo keeps the lowercase name, with charcoal `no` and teal `bg`. The generated lettering approximates monospaced typography; the website's live wordmark still uses IBM Plex Mono.
+The icon depicts a foreground tile separating from its background frame. The logo keeps the lowercase name, with charcoal `no` and teal `bg`. The generated lettering approximates monospaced typography. The website uses this logo in the landing page navigation and footer, and in the documentation navigation.
 
 ## Icon prompt
 
@@ -46,4 +46,3 @@ Edit target: the supplied nobg horizontal logo.
 Change only the lettering: replace the heavy rounded lettering with an unmistakably monospaced typewriter-code wordmark matching IBM Plex Mono Semibold. Medium weight, visibly equal character cells and regular measured spacing. Exact text "nobg", all lowercase, one continuous word. The n, o, b, and g must each have the same advance width. Use a single-storey g. "no" remains charcoal #18181B and "bg" remains teal #0D9488.
 Keep the reference icon unchanged in design and position, and keep the horizontal icon-plus-wordmark arrangement and transparent background. Make the lettering less bulky, with open counters and crisp flat color. Preserve genuinely transparent alpha, including all holes and surrounding space. No gradients, textures, shadows, extra text, white fill, or mockup. Output one complete horizontal logo with nothing cropped.
 ```
-

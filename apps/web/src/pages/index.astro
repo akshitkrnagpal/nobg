@@ -8,6 +8,7 @@ import {
 } from "@phosphor-icons/react/ssr";
 import { Home } from "@/components/home";
 import Layout from "@/components/layout.astro";
+import { Wordmark } from "@/components/wordmark";
 
 const command = `curl --fail-with-body \\\n  "$NOBG_URL/api/v1/remove-background" \\\n  -F "image=@photo.jpg" \\\n  --output nobg.png`;
 const faqs = [
@@ -233,8 +234,8 @@ const faqs = [
     </div>
   </Home>
   <footer class="site-footer wrap">
-    <a class="wordmark" href="/" aria-label="nobg home">
-      no<span>bg</span>
+    <a href="/" aria-label="nobg home">
+      <Wordmark />
     </a>
     <p>Self-hosted on Cloudflare.</p>
     <nav aria-label="Footer navigation">

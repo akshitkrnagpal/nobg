@@ -1,7 +1,5 @@
 export function Wordmark() {
   return (
-    <span className="wordmark" role="img" aria-label="nobg">
-      no<span>bg</span>
-    </span>
+    <img className="wordmark" src="/brand/nobg-logo-v1.png" alt="nobg" width={2167} height={726} />
   );
 }

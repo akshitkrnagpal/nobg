@@ -54,17 +54,10 @@ button {
   margin-inline: auto;
 }
 .wordmark {
-  display: inline-flex;
-  align-items: center;
-  color: #18181b;
-  font-family: var(--font-mono);
-  font-size: 30px;
-  font-weight: 600;
-  letter-spacing: -0.04em;
-  line-height: 1;
-}
-.wordmark span {
-  color: var(--accent);
+  display: block;
+  width: 144px;
+  height: auto;
+  flex-shrink: 0;
 }
 .nobg-home {
   --fd-layout-width: 1264px;
@@ -521,7 +514,7 @@ button {
   padding-block: 28px;
 }
 .site-footer .wordmark {
-  font-size: 28px;
+  width: 132px;
 }
 .site-footer p {
   margin-right: auto;
