@@ -4,9 +4,10 @@ export const DEFAULT_MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
 export const MAX_IMAGE_PIXELS = 25_000_000;
 export const errorCodes = [
-  "unauthorized",
   "not_configured",
   "rate_limited",
+  "daily_limit_reached",
+  "monthly_limit_reached",
   "invalid_request",
   "invalid_image",
   "unsupported_format",

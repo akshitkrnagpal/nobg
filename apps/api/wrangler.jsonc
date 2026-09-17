@@ -9,20 +9,27 @@
     "binding": "IMAGES"
   },
   "vars": {
-    "MAX_UPLOAD_BYTES": "10485760"
+    "MAX_UPLOAD_BYTES": "10485760",
+    "IP_REQUESTS_PER_MINUTE": "5",
+    "IP_IMAGES_PER_DAY": "20",
+    "IMAGES_PER_MONTH": "10000"
   },
-  "ratelimits": [
-    {
-      "name": "RATE_LIMITER",
-      "namespace_id": "1001",
-      "simple": {
-        "limit": 30,
-        "period": 60
-      }
-    }
-  ],
   "observability": {
     "enabled": true,
     "head_sampling_rate": 0.1
-  }
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "QUOTAS",
+        "class_name": "QuotaCounter"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["QuotaCounter"]
+    }
+  ]
 }

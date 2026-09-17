@@ -3,7 +3,7 @@ title: Code examples
 description: Call nobg from your backend with tools you already use.
 ---
 
-After [deploying the Worker](/docs/quickstart/), set `NOBG_URL` to its base URL with no trailing slash and load `NOBG_API_KEY` from your secret manager. Use these variables in your backend environment. Do not put the key in browser code.
+After [deploying the Worker](/docs/quickstart/), set `NOBG_URL` to its base URL with no trailing slash in your backend environment. No API key is needed.
 
 ```sh
 export NOBG_URL="https://nobg-api.YOUR-SUBDOMAIN.workers.dev"
@@ -14,7 +14,6 @@ export NOBG_URL="https://nobg-api.YOUR-SUBDOMAIN.workers.dev"
 ```sh
 curl --fail-with-body \
   "$NOBG_URL/api/v1/remove-background" \
-  -H "Authorization: Bearer $NOBG_API_KEY" \
   -F "image=@photo.jpg" \
   -F "format=webp" \
   --output nobg.webp
@@ -37,7 +36,6 @@ const response = await fetch(
   `${process.env.NOBG_URL}/api/v1/remove-background`,
   {
     method: 'POST',
-    headers: { Authorization: `Bearer ${process.env.NOBG_API_KEY}` },
     body: form,
   },
 );
@@ -61,7 +59,6 @@ import requests
 with open("photo.jpg", "rb") as image:
     response = requests.post(
         f"{os.environ['NOBG_URL']}/api/v1/remove-background",
-        headers={"Authorization": f"Bearer {os.environ['NOBG_API_KEY']}"},
         files={"image": ("photo.jpg", image, "image/jpeg")},
         data={"format": "png"},
         timeout=120,
@@ -76,4 +73,4 @@ with open("nobg.png", "wb") as result:
 
 ## Browser applications
 
-Have your frontend call your own authenticated backend. Your backend should validate the user and forward the upload to nobg using the server-held API key. nobg does not enable cross-origin browser access by default.
+nobg does not enable cross-origin browser access by default. Use a same-origin route or your own backend to forward uploads. Requests forwarded by one backend share that backend’s outbound IP allowance. On `429`, wait for the `Retry-After` interval before trying again.

@@ -12,28 +12,20 @@ The deployment configuration is `apps/api/wrangler.jsonc`. Commands using `pnpm 
 | `name` | `nobg-api` | Identifies the API Worker in your account |
 | `account_id` | Not set | Pin the target account if your login has access to several |
 | `main` | `src/index.ts` | Hono Worker entrypoint |
-| `compatibility_flags` | `nodejs_compat` | Enables the Node.js crypto API used for key comparison |
+| `compatibility_flags` | `nodejs_compat` | Enables the Node.js IP address validator |
 | `workers_dev` | `true` | Publishes a `workers.dev` endpoint |
 | `images.binding` | `IMAGES` | Gives the handler access to Cloudflare Images |
 | `vars.MAX_UPLOAD_BYTES` | `10485760` | File size cap, 10 MiB |
-| `ratelimits[0].name` | `RATE_LIMITER` | Binding used to limit upload attempts |
-| `ratelimits[0].namespace_id` | `1001` | Rate limiter namespace within your account |
-| `ratelimits[0].simple` | 30 requests / 60 seconds | Limit shared by authenticated clients at each Cloudflare location |
+| `vars.IP_REQUESTS_PER_MINUTE` | `5` | Requests per IP per UTC calendar minute |
+| `vars.IP_IMAGES_PER_DAY` | `20` | Validated image attempts per IP per UTC day |
+| `vars.IMAGES_PER_MONTH` | `10000` | Image attempts across the service per UTC calendar month |
+| `durable_objects.bindings` | `QUOTAS` / `QuotaCounter` | Persistent quota counters |
+| `migrations` | `v1` / `new_sqlite_classes` | Creates SQLite-backed quota storage |
 | `observability.head_sampling_rate` | `0.1` | Worker observability sampling rate |
 
-Keep the `IMAGES` and `RATE_LIMITER` names unless you also change the handler. The Images binding accepts uploaded bytes, so you do not need to store the image or give it a public URL. See [Cloudflare's Images binding setup](https://developers.cloudflare.com/images/optimization/binding/).
+Keep the `IMAGES` and `QUOTAS` binding names and the `QuotaCounter` class migration. Wrangler provisions the storage when you deploy. No API key or account registration is required for callers.
 
-## API key
-
-`API_KEY` is a Worker secret. Create or replace it with:
-
-```sh
-pnpm --filter @nobg/api exec wrangler secret put API_KEY
-```
-
-Use a random value with at least 32 characters. A missing key, short key, or the example placeholder causes `503 not_configured` on the upload endpoint. The public health endpoint still responds.
-
-One key authorizes the service. There are no per-user keys or accounts. See [key rotation](/docs/operations/#rotate-the-api-key) before replacing a key used by existing clients.
+The Images binding accepts uploaded bytes without a public image URL. See [Cloudflare's Images binding setup](https://developers.cloudflare.com/images/optimization/binding/).
 
 ## Upload limits
 
@@ -41,11 +33,19 @@ One key authorizes the service. There are no per-user keys or accounts. See [key
 
 Decoded images are limited to 25 megapixels. That limit lives in `packages/contracts/src/index.ts` and requires a code change and deployment to adjust.
 
-## Rate limits
+## IP quotas and monthly budget
 
-Choose a numeric `namespace_id` that is unused by other rate limiters in your account. Deployments sharing a namespace and the same key share counters. nobg uses one counter key for all authenticated upload attempts, including requests that later fail validation.
+All three quota variables must be positive safe integers. Limits use fixed UTC calendar windows. Minute limits count all upload requests with a valid Cloudflare client IP, including malformed uploads. Daily and monthly limits count attempts after image validation, before transformation. Processing failures still consume allowances.
 
-Cloudflare's limiter is approximate and local to each Cloudflare location. It is not a global request quota or spending cap. See [Cloudflare's rate limiting binding](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/).
+The daily allowance is reserved before the monthly budget. If the monthly budget is exhausted, that request still consumes a daily slot. Counter reservations are not refunded after failures or disconnected requests, so the monthly setting is an upper bound on processing attempts.
+
+Every `429` includes a `Retry-After` value in seconds. Daily counters reset at midnight UTC; the shared budget resets on the first day of each month. Redeploying code retains counters. Changing a limit applies to the existing count without resetting it.
+
+Counters live in SQLite-backed Durable Objects, with one object per hashed IP and one for the shared image budget. Updates are atomic across concurrent requests and Cloudflare locations. Alarms remove expired counter records. The budget controls image attempts, not total Cloudflare charges. Workers and Durable Objects usage is separate.
+
+The Worker uses Cloudflare's `CF-Connecting-IP` header and ignores `X-Forwarded-For`. Missing or invalid client IPs are rejected. Route public traffic directly through Cloudflare to this Worker. People behind the same NAT or proxy share an allowance. Different IPs receive separate allowances, but all requests use the same monthly budget.
+
+IP hashes are identifiers, not anonymization. nobg does not store raw IPs or images in quota records. Cloudflare may retain request metadata through its platform logs.
 
 ## Custom domain
 

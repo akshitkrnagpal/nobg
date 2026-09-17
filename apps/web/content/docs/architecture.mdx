@@ -5,10 +5,10 @@ description: The request path, Cloudflare bindings, and image data handling.
 
 ```text
 Your backend
-  | POST image + Bearer API key
+  | POST image
   v
 nobg Worker (Hono)
-  | authenticate, rate-limit, validate
+  | IP quotas, validation, monthly budget
   v
 Cloudflare Images binding
   | segment: foreground
@@ -19,10 +19,10 @@ Transparent PNG or WebP returned to your backend
 ## Request lifecycle
 
 1. Assign a request ID and disable response caching.
-2. Verify the configured Bearer API key using a timing-safe digest comparison.
-3. Check the Cloudflare rate limiter.
-4. Read the upload with a bounded body size and parse multipart fields.
-5. Validate the image signature, declared format, file size, and pixel count.
+2. Validate Cloudflare's client IP and reserve a request in its minute counter.
+3. Read the upload with a bounded body size and parse multipart fields.
+4. Validate the image signature, declared format, file size, and pixel count.
+5. Reserve the IP's daily allowance, then a slot in the shared monthly budget.
 6. Send the bytes through the Images binding using `segment: "foreground"`.
 7. Return the binary image with a download filename.
 
@@ -32,10 +32,12 @@ The service uses the [Cloudflare Images binding](https://developers.cloudflare.c
 
 nobg does not save uploads or outputs to R2, D1, KV, or Cloudflare Images storage. It buffers a bounded upload for validation and returns the processed stream with `Cache-Control: no-store`. Cloudflare processes the bytes under its service policies.
 
-Unexpected application errors log an event name and request ID. These logs do not include image bytes, filenames, keys, or provider error messages. Cloudflare may record platform request metadata through observability.
+Unexpected application errors log an event name and request ID. These logs do not include image bytes, filenames, raw IPs, or provider error messages. Cloudflare may record platform request metadata through observability.
+
+Quota records contain counts and expiry times. Object names use hashed IPs. Alarms remove expired records, and stored counters survive Worker restarts and deployments. See [quota settings](/docs/configuration/#ip-quotas-and-monthly-budget).
 
 ## Deployment contents
 
-`apps/api/src/index.ts` contains the handler. `apps/api/wrangler.jsonc` declares its Images and rate limiter bindings. `packages/contracts` supplies formats, limits, and error types used by the handler and OpenAPI document.
+`apps/api/src/index.ts` contains the handler. `apps/api/wrangler.jsonc` declares its Images and Durable Object bindings. `packages/contracts` supplies formats, limits, and error types used by the handler and OpenAPI document.
 
 This is a single Worker deployment. There is no dependency on the documentation website at runtime.

@@ -25,15 +25,11 @@ The health route is `/api/health`; background removal requires `POST /api/v1/rem
 
 ## 503 not_configured
 
-Check that `API_KEY` is set for the correct Worker and is a random string of at least 32 characters. The example placeholder is intentionally rejected. Also check that `MAX_UPLOAD_BYTES` is an integer between 1 and 20971520.
-
-## 401 unauthorized
-
-Use the `Authorization: Bearer YOUR_API_KEY` header. Check for extra whitespace, a stale key after rotation, or a key configured on the website instead of the API.
+Check that all quota variables are positive integers and `MAX_UPLOAD_BYTES` is an integer between 1 and 20971520. Use the supplied Durable Object binding and migration.
 
 ## 400 invalid_request
 
-Send multipart form data with exactly one `image` file. The optional `format` field accepts `png` or `webp`. Do not manually set the multipart boundary when your client creates the form body.
+Send multipart form data with exactly one `image` file. The optional `format` field accepts `png` or `webp`. Do not manually set the multipart boundary when your client creates the form body. The route also requires a valid Cloudflare client IP. For local requests, see [local testing](/docs/local-development/).
 
 ## 400 invalid_image
 
@@ -49,7 +45,11 @@ Use JPEG, PNG, or WebP and ensure the MIME type matches the bytes. An SVG rename
 
 ## 429 rate_limited
 
-Wait for the `Retry-After` interval. The default is 30 authenticated attempts per minute per Cloudflare location, shared across this API's clients.
+Wait for the `Retry-After` interval. The default is 5 requests per UTC calendar minute per IP.
+
+## 429 daily_limit_reached or monthly_limit_reached
+
+The IP has used its 20 daily image attempts, or the service has used its 10,000 monthly attempts. Honor `Retry-After`. Daily and monthly windows reset at midnight UTC and the start of the next UTC month. Changing IPs does not bypass the shared monthly budget.
 
 ## 502 processing_failed locally
 
@@ -61,4 +61,4 @@ Check that Images is enabled for the account, the `IMAGES` binding exists, and t
 
 ## Investigate a failed request
 
-Keep the response status, JSON error code, and `X-Request-Id`. Use [Worker logs and deployment history](/docs/operations/) to check what is running. Do not include the API key or image contents in a bug report.
+Keep the response status, JSON error code, and `X-Request-Id`. Use [Worker logs and deployment history](/docs/operations/) to check what is running. Do not include the image contents in a bug report.

@@ -1,4 +1,4 @@
-import { timingSafeEqual } from "node:crypto";
+import { isIP } from "node:net";
 import {
   type ApiError,
   DEFAULT_MAX_UPLOAD_BYTES,
@@ -9,6 +9,8 @@ import {
 } from "@nobg/contracts";
 import { type Context, Hono } from "hono";
 import { openApiDocument } from "./openapi";
+
+export { QuotaCounter } from "./quota";
 
 type AppEnv = {
   Bindings: CloudflareBindings;
@@ -103,30 +105,30 @@ app.get("/api/health", (c) => c.json({ status: "ok", service: "nobg", version: "
 app.get("/api/openapi.json", (c) => c.json(openApiDocument));
 
 app.post("/api/v1/remove-background", async (c) => {
-  const configuredKey = c.env.API_KEY;
-  if (!configuredKey || configuredKey.length < 32 || configuredKey.startsWith("replace-with-")) {
-    return failure(
-      c,
-      "not_configured",
-      "Configure a random API_KEY of at least 32 characters.",
-      503,
-    );
+  const limits = {
+    minute: Number(c.env.IP_REQUESTS_PER_MINUTE),
+    day: Number(c.env.IP_IMAGES_PER_DAY),
+    month: Number(c.env.IMAGES_PER_MONTH),
+  };
+  if (Object.values(limits).some((limit) => !Number.isSafeInteger(limit) || limit < 1)) {
+    return failure(c, "not_configured", "Quota limits must be positive integers.", 503);
   }
-  const authorization = c.req.header("Authorization") ?? "";
-  const key = /^Bearer (\S+)$/i.exec(authorization)?.[1] ?? "";
-  const encoder = new TextEncoder();
-  const [supplied, expected] = await Promise.all([
-    crypto.subtle.digest("SHA-256", encoder.encode(key)),
-    crypto.subtle.digest("SHA-256", encoder.encode(configuredKey)),
-  ]);
-  if (!key || !timingSafeEqual(new Uint8Array(supplied), new Uint8Array(expected))) {
-    c.header("WWW-Authenticate", "Bearer");
-    return failure(c, "unauthorized", "Provide a valid Bearer API key.", 401);
+  const ip = c.req.header("CF-Connecting-IP") ?? "";
+  const version = isIP(ip);
+  if (!version) {
+    return failure(c, "invalid_request", "A Cloudflare client IP is required.", 400);
   }
-  const { success } = await c.env.RATE_LIMITER.limit({ key: "nobg:remove-background" });
-  if (!success) {
-    c.header("Retry-After", "60");
-    return failure(c, "rate_limited", "Too many requests. Try again in 60 seconds.", 429);
+  // Cloudflare supplies this header. Never use client-controlled X-Forwarded-For.
+  const canonicalIp = version === 6 ? new URL(`http://[${ip}]/`).hostname : ip;
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonicalIp));
+  const ipHash = Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+  const ipQuota = c.env.QUOTAS.getByName(`ip:${ipHash}`);
+  const minute = await ipQuota.consume("minute", limits.minute);
+  if (!minute.success) {
+    c.header("Retry-After", String(minute.retryAfter));
+    return failure(c, "rate_limited", "Too many requests from this IP. Try again later.", 429);
   }
   if (!/^multipart\/form-data(?:\s*;|$)/i.test(c.req.header("Content-Type") ?? "")) {
     return failure(c, "invalid_request", "Use multipart/form-data with an image field.", 400);
@@ -182,6 +184,22 @@ app.post("/api/v1/remove-background", async (c) => {
       return failure(c, "payload_too_large", "Images must be 25 megapixels or smaller.", 413);
   } catch {
     return failure(c, "invalid_image", "The image could not be decoded.", 400);
+  }
+  const daily = await ipQuota.consume("day", limits.day);
+  if (!daily.success) {
+    c.header("Retry-After", String(daily.retryAfter));
+    return failure(c, "daily_limit_reached", "This IP has reached its daily image allowance.", 429);
+  }
+  // The shared budget coordinates processing admissions only; images never enter a DO.
+  const monthly = await c.env.QUOTAS.getByName("image-budget").consume("month", limits.month);
+  if (!monthly.success) {
+    c.header("Retry-After", String(monthly.retryAfter));
+    return failure(
+      c,
+      "monthly_limit_reached",
+      "The service has reached its monthly image allowance.",
+      429,
+    );
   }
   try {
     const image = await c.env.IMAGES.input(file.stream())

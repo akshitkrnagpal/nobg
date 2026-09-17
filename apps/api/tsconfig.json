@@ -1,5 +1,8 @@
 {
   "extends": "../../tsconfig.base.json",
-  "compilerOptions": { "types": ["node"], "lib": ["ES2022"] },
+  "compilerOptions": {
+    "types": ["node", "@cloudflare/vitest-pool-workers/types"],
+    "lib": ["ES2022"]
+  },
   "include": ["src", "test", "*.ts", "*.d.ts"]
 }

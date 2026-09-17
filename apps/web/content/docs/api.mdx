@@ -7,7 +7,7 @@ description: One upload endpoint, with binary images on success and JSON on fail
 
 `POST /api/v1/remove-background`
 
-Send `Authorization: Bearer YOUR_API_KEY` and a `multipart/form-data` body. Let your HTTP client generate the multipart boundary.
+Send a `multipart/form-data` body. No API key is required. Let your HTTP client generate the multipart boundary.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -17,6 +17,8 @@ Send `Authorization: Bearer YOUR_API_KEY` and a `multipart/form-data` body. Let 
 Only these fields are accepted. Duplicate fields are rejected. Remote image URLs and base64 payloads are not supported. This is a nobg API, not a remove.bg compatibility endpoint.
 
 The default input limit is **10 MiB** and the pixel limit is **25 megapixels**. File signatures must match the declared MIME type. When an animated input is accepted by Images, the output is a still image using `anim: false`.
+
+Default quotas are 5 requests per UTC calendar minute and 20 validated image attempts per UTC day per IP. The service also has a shared 10,000-attempt monthly cap. Processing failures count. People sharing an IP share quotas, including callers behind one backend. See [counting rules](/docs/configuration/#ip-quotas-and-monthly-budget).
 
 ### Success
 
@@ -29,8 +31,8 @@ Responses include `Cache-Control: no-store` and an `X-Request-Id` header. nobg a
 ```json
 {
   "error": {
-    "code": "unauthorized",
-    "message": "Provide a valid Bearer API key.",
+    "code": "rate_limited",
+    "message": "Too many requests from this IP. Try again later.",
     "requestId": "a-request-uuid"
   }
 }
@@ -40,16 +42,17 @@ Responses include `Cache-Control: no-store` and an `X-Request-Id` header. nobg a
 | --- | --- | --- |
 | 400 | `invalid_request` | Missing fields, invalid multipart body, or duplicate/unknown fields |
 | 400 | `invalid_image` | Images could not inspect or decode the file |
-| 401 | `unauthorized` | Missing or incorrect Bearer API key |
 | 404 | `not_found` | Unknown route or unsupported method |
 | 413 | `payload_too_large` | File, request body, or pixel count exceeds the limit |
 | 415 | `unsupported_format` | Unsupported file signature, MIME mismatch, or output format |
-| 429 | `rate_limited` | Rate limiter rejected the request; retry after 60 seconds |
+| 429 | `rate_limited` | IP minute allowance exhausted; honor `Retry-After` |
+| 429 | `daily_limit_reached` | IP daily image allowance exhausted |
+| 429 | `monthly_limit_reached` | Shared monthly image budget exhausted |
 | 502 | `processing_failed` | Cloudflare Images could not produce the result |
-| 503 | `not_configured` | API key or upload limit is not configured correctly |
+| 503 | `not_configured` | Quota or upload limit is not configured correctly |
 | 500 | `internal_error` | Unexpected service failure |
 
-Do not automatically retry validation or authentication errors. Respect the `Retry-After` header on a `429`. A retry after a processing failure can repeat processing work.
+Do not automatically retry validation errors. Respect the `Retry-After` header on a `429`. A retry after a processing failure can repeat processing work.
 
 ## Health
 

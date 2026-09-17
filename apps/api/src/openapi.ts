@@ -56,8 +56,8 @@ export const openApiDocument = {
       post: {
         operationId: "removeBackground",
         summary: "Remove an image background",
-        description: `Upload JPEG, PNG, or WebP. Default file limit: ${DEFAULT_MAX_UPLOAD_BYTES} bytes. Pixel limit: ${MAX_IMAGE_PIXELS}. Animated inputs are output as still images. Only image and format fields are accepted; duplicate fields are rejected.`,
-        security: [{ bearerAuth: [] }],
+        description: `Public endpoint; no API key. Defaults: 5 requests per UTC minute and 20 image attempts per UTC day per IP, with 10,000 image attempts per UTC calendar month across the service. Failed processing attempts count. Honor Retry-After on 429. Upload JPEG, PNG, or WebP. Default file limit: ${DEFAULT_MAX_UPLOAD_BYTES} bytes. Pixel limit: ${MAX_IMAGE_PIXELS}. Animated inputs are output as still images. Only image and format fields are accepted; duplicate fields are rejected.`,
+        security: [],
         requestBody: {
           required: true,
           content: {
@@ -93,13 +93,12 @@ export const openApiDocument = {
             },
           },
           "400": errorResponse("Invalid request or undecodable image"),
-          "401": errorResponse("Missing or invalid API key"),
           "413": errorResponse("File, request body, or pixel count exceeds limit"),
           "415": errorResponse("Unsupported format or mismatched MIME type"),
           "429": {
-            ...errorResponse("Rate limited"),
+            ...errorResponse("Per-IP minute or daily quota, or shared monthly budget exhausted"),
             headers: {
-              "Retry-After": { schema: { type: "string", const: "60" } },
+              "Retry-After": { schema: { type: "string", pattern: "^[0-9]+$" } },
               "X-Request-Id": { schema: { type: "string" } },
             },
           },
@@ -111,7 +110,6 @@ export const openApiDocument = {
     },
   },
   components: {
-    securitySchemes: { bearerAuth: { type: "http", scheme: "bearer" } },
     schemas: {
       Error: {
         type: "object",

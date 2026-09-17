@@ -9,15 +9,15 @@ import {
 import { Home } from "@/components/home";
 import Layout from "@/components/layout.astro";
 
-const command = `curl --fail-with-body \\\n  "$NOBG_URL/api/v1/remove-background" \\\n  -H "Authorization: Bearer $NOBG_API_KEY" \\\n  -F "image=@photo.jpg" \\\n  --output nobg.png`;
+const command = `curl --fail-with-body \\\n  "$NOBG_URL/api/v1/remove-background" \\\n  -F "image=@photo.jpg" \\\n  --output nobg.png`;
 const faqs = [
   [
     "What does self-hosted mean here?",
-    "You deploy the API into your own Cloudflare account. You control the code, API key, and deployment. Cloudflare Images processes the images.",
+    "You deploy the API into your own Cloudflare account. You control the code, limits, and deployment. Cloudflare Images processes the images.",
   ],
   [
     "Is nobg free to run?",
-    "Cloudflare charges for Images and Workers usage. Check the costs guide for account requirements before deploying.",
+    "Cloudflare charges for Images, Workers, and Durable Objects usage. Check the costs guide for account requirements before deploying.",
   ],
   [
     "Do you store my images?",
@@ -25,7 +25,7 @@ const faqs = [
   ],
   [
     "Can I use it with my existing app?",
-    "Send a multipart HTTP request from your backend with your API key. The docs include curl, JavaScript, and Python examples.",
+    "Send a multipart HTTP request from your backend. The docs include curl, JavaScript, and Python examples.",
   ],
   [
     "Is this a drop-in replacement for remove.bg?",
@@ -111,16 +111,14 @@ const faqs = [
         <div class="steps">
           <article>
             <h3>1. Deploy the Worker</h3>
-            <p>
-              Enable Cloudflare Images, deploy the Hono Worker, and add your API key as a secret.
-            </p>
+            <p>Enable Cloudflare Images, choose your usage limits, and deploy the Hono Worker.</p>
             <a href="/docs/quickstart/">
               Deployment guide <ArrowRightIcon size={18} aria-hidden="true" />
             </a>
           </article>
           <article>
             <h3>2. Send an image</h3>
-            <p>Upload a JPEG, PNG, or WebP from your backend using your API key.</p>
+            <p>Upload a JPEG, PNG, or WebP from your backend.</p>
             <a href="/docs/api/">
               API reference <ArrowRightIcon size={18} aria-hidden="true" />
             </a>
@@ -139,7 +137,7 @@ const faqs = [
           <h2>Make a request</h2>
           <p>
             The API accepts a multipart upload and returns image bytes. Call it with any HTTP
-            client, and keep your API key on your backend.
+            client. No API key is required.
           </p>
           <a class="text-link" href="/docs/examples/">
             See the integration examples <ArrowRightIcon size={18} aria-hidden="true" />
@@ -159,7 +157,7 @@ const faqs = [
             aria-label="curl request example"
           ><code id="curl-code">{command}</code></pre>
           <p class="code-caption">
-            Set <code>NOBG_URL</code> to your API URL and <code>NOBG_API_KEY</code> to your secret.
+            Set <code>NOBG_URL</code> to your deployed API URL.
           </p>
           <span id="copy-status" class="sr-only" role="status" aria-live="polite"></span>
         </div>
@@ -168,8 +166,8 @@ const faqs = [
         <div>
           <h2 id="operating-title">Formats and limits</h2>
           <p>
-            The Worker runs on Hono and uses Cloudflare Images for background removal. There is no
-            database or storage bucket to configure.
+            The Worker runs on Hono and uses Cloudflare Images for background removal. Durable
+            Objects keep IP quotas and a monthly image budget.
           </p>
           <a class="text-link" href="/docs/architecture/">
             How requests are handled <ArrowRightIcon size={18} aria-hidden="true" />
@@ -187,6 +185,14 @@ const faqs = [
           <div>
             <dt>Output</dt>
             <dd>Transparent PNG or WebP</dd>
+          </div>
+          <div>
+            <dt>Per IP</dt>
+            <dd>5 requests/minute · 20 images/day</dd>
+          </div>
+          <div>
+            <dt>Monthly budget</dt>
+            <dd>10,000 image attempts across the service</dd>
           </div>
           <div>
             <dt>Storage</dt>
@@ -217,7 +223,7 @@ const faqs = [
         <div>
           <h2>Deploy your API</h2>
           <p>
-            The setup guide covers Cloudflare configuration, your API key, and your first request.
+            The setup guide covers Cloudflare configuration, usage limits, and your first request.
           </p>
         </div>
         <a class="button primary" href="/docs/quickstart/">

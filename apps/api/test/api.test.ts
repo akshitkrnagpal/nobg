@@ -4,7 +4,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { app } from "../src/index";
 import type { openApiDocument } from "../src/openapi";
 
-const API_KEY = "test-only-key-not-for-deployment-1234567890";
+const IP = "203.0.113.7";
+const consumeIp = vi.fn();
+const consumeBudget = vi.fn();
 const png = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 0]);
 const output = new Uint8Array([137, 80, 78, 71, 1, 2, 3]);
 const endpoint = "http://localhost/api/v1/remove-background";
@@ -25,14 +27,22 @@ function upload(options: { bytes?: Uint8Array; type?: string; format?: string } 
 function request(body: BodyInit = upload(), extra: Partial<CloudflareBindings> = {}) {
   return app.request(
     endpoint,
-    { method: "POST", headers: { Authorization: `Bearer ${API_KEY}` }, body },
+    { method: "POST", headers: { "CF-Connecting-IP": IP }, body },
     { ...bindings, ...extra },
   );
 }
 
 beforeEach(() => {
-  bindings = { ...env, API_KEY };
-  vi.spyOn(bindings.RATE_LIMITER, "limit").mockResolvedValue({ success: true });
+  bindings = { ...env };
+  consumeIp.mockReset().mockResolvedValue({ success: true, retryAfter: 60 });
+  consumeBudget.mockReset().mockResolvedValue({ success: true, retryAfter: 60 });
+  const ipStub = bindings.QUOTAS.getByName("test-ip");
+  const budgetStub = bindings.QUOTAS.getByName("test-budget");
+  vi.spyOn(ipStub, "consume").mockImplementation(consumeIp);
+  vi.spyOn(budgetStub, "consume").mockImplementation(consumeBudget);
+  vi.spyOn(bindings.QUOTAS, "getByName").mockImplementation((name) =>
+    name === "image-budget" ? budgetStub : ipStub,
+  );
   vi.spyOn(bindings.IMAGES, "info").mockResolvedValue({
     format: "image/png",
     width: 400,
@@ -51,41 +61,102 @@ beforeEach(() => {
   vi.spyOn(bindings.IMAGES, "input").mockReturnValue(transformer);
 });
 
-describe("authentication and limits", () => {
-  it("fails closed when the API key is missing, short, or a placeholder", async () => {
-    for (const key of [undefined, "short", "replace-with-a-random-key-of-at-least-32-characters"]) {
-      const response = await request(upload(), { API_KEY: key });
-      expect(response.status).toBe(503);
-      expect((await response.json<ApiError>()).error.code).toBe("not_configured");
-    }
-    expect(bindings.IMAGES.input).not.toHaveBeenCalled();
+describe("IP quotas", () => {
+  it("accepts requests without accounts or API keys", async () => {
+    expect((await request()).status).toBe(200);
+    expect(consumeIp.mock.calls).toEqual([
+      ["minute", 5],
+      ["day", 20],
+    ]);
+    expect(consumeBudget).toHaveBeenCalledWith("month", 10000);
+    const names = vi.mocked(bindings.QUOTAS.getByName).mock.calls.map(([name]) => name);
+    expect(names[0]).toMatch(/^ip:[a-f0-9]{64}$/);
+    expect(names).not.toContain(IP);
   });
 
-  it("rejects missing and incorrect credentials before processing", async () => {
-    for (const authorization of [
-      "",
-      "Bearer wrong-key",
-      `Basic ${API_KEY}`,
-      `Bearer ${API_KEY} extra`,
-    ]) {
+  it("rejects missing or invalid Cloudflare IPs even with a forwarded IP", async () => {
+    for (const ip of ["", "bad", "203.0.113.1, 203.0.113.2"]) {
       const response = await app.request(
         endpoint,
-        { method: "POST", headers: { Authorization: authorization }, body: upload() },
+        {
+          method: "POST",
+          body: upload(),
+          headers: { "CF-Connecting-IP": ip, "X-Forwarded-For": IP },
+        },
         bindings,
       );
-      expect(response.status).toBe(401);
-      expect(response.headers.get("WWW-Authenticate")).toBe("Bearer");
+      expect(response.status).toBe(400);
     }
-    expect(bindings.RATE_LIMITER.limit).not.toHaveBeenCalled();
+    expect(consumeIp).not.toHaveBeenCalled();
     expect(bindings.IMAGES.info).not.toHaveBeenCalled();
   });
 
-  it("returns a retry interval when rate limited", async () => {
-    vi.mocked(bindings.RATE_LIMITER.limit).mockResolvedValue({ success: false });
+  it("uses the same counter for equivalent IPv6 addresses and ignores X-Forwarded-For", async () => {
+    for (const ip of ["2001:db8::1", "2001:0db8:0:0:0:0:0:1"]) {
+      await app.request(
+        endpoint,
+        {
+          method: "POST",
+          body: upload(),
+          headers: {
+            "CF-Connecting-IP": ip,
+            "X-Forwarded-For": crypto.randomUUID(),
+          },
+        },
+        bindings,
+      );
+    }
+    const names = vi
+      .mocked(bindings.QUOTAS.getByName)
+      .mock.calls.filter(([name]) => name.startsWith("ip:"));
+    expect(names[0]).toEqual(names[1]);
+  });
+
+  it("returns a retry interval when rate limited before reading the upload", async () => {
+    consumeIp.mockResolvedValue({ success: false, retryAfter: 42 });
     const response = await request();
     expect(response.status).toBe(429);
-    expect(response.headers.get("Retry-After")).toBe("60");
+    expect(response.headers.get("Retry-After")).toBe("42");
+    expect((await response.json<ApiError>()).error.code).toBe("rate_limited");
+    expect(bindings.IMAGES.info).not.toHaveBeenCalled();
+    expect(consumeBudget).not.toHaveBeenCalled();
+  });
+
+  it("rejects daily and monthly exhaustion before transformation", async () => {
+    consumeIp
+      .mockResolvedValueOnce({ success: true })
+      .mockResolvedValueOnce({ success: false, retryAfter: 3600 });
+    let response = await request();
+    expect(response.status).toBe(429);
+    expect((await response.json<ApiError>()).error.code).toBe("daily_limit_reached");
+    expect(response.headers.get("Retry-After")).toBe("3600");
+    expect(consumeBudget).not.toHaveBeenCalled();
+    consumeIp.mockResolvedValue({ success: true });
+    consumeBudget.mockResolvedValue({ success: false, retryAfter: 86400 });
+    response = await request();
+    expect(response.status).toBe(429);
+    expect((await response.json<ApiError>()).error.code).toBe("monthly_limit_reached");
+    expect(response.headers.get("Retry-After")).toBe("86400");
     expect(bindings.IMAGES.input).not.toHaveBeenCalled();
+  });
+
+  it("fails closed for invalid quota settings", async () => {
+    for (const key of [
+      "IP_REQUESTS_PER_MINUTE",
+      "IP_IMAGES_PER_DAY",
+      "IMAGES_PER_MONTH",
+    ] as const) {
+      for (const value of ["", "0", "-1", "1.5", "bad"]) {
+        expect((await request(upload(), { [key]: value })).status).toBe(503);
+      }
+    }
+    expect(consumeIp).not.toHaveBeenCalled();
+  });
+
+  it("does not consume image allowances for invalid uploads", async () => {
+    expect((await request("not multipart")).status).toBe(400);
+    expect(consumeIp.mock.calls).toEqual([["minute", 5]]);
+    expect(consumeBudget).not.toHaveBeenCalled();
   });
 
   it("rejects invalid configured limits", async () => {
@@ -112,7 +183,7 @@ describe("authentication and limits", () => {
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${API_KEY}`,
+          "CF-Connecting-IP": IP,
           "Content-Type": "multipart/form-data; boundary=test",
         },
         body: stream,
@@ -145,7 +216,7 @@ describe("upload validation", () => {
         method: "POST",
         body: "broken",
         headers: {
-          Authorization: `Bearer ${API_KEY}`,
+          "CF-Connecting-IP": IP,
           "Content-Type": "multipart/form-data; boundary=missing",
         },
       },
@@ -222,6 +293,7 @@ describe("output and service behavior", () => {
     vi.mocked(transformer.output).mockRejectedValue(new Error("private provider details"));
     const response = await request();
     expect(response.status).toBe(502);
+    expect(consumeBudget).toHaveBeenCalledWith("month", 10000);
     expect(response.headers.get("Content-Type")).toContain("application/json");
     const payload = await response.json<ApiError>();
     expect(payload.error.code).toBe("processing_failed");
@@ -230,11 +302,12 @@ describe("output and service behavior", () => {
   });
 
   it("handles unexpected failures with a request ID and no sensitive logging", async () => {
-    vi.mocked(bindings.RATE_LIMITER.limit).mockRejectedValue(new Error(API_KEY));
+    consumeBudget.mockRejectedValue(new Error(IP));
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     const response = await request();
     expect(response.status).toBe(500);
-    expect(JSON.stringify(log.mock.calls)).not.toContain(API_KEY);
+    expect(bindings.IMAGES.input).not.toHaveBeenCalled();
+    expect(JSON.stringify(log.mock.calls)).not.toContain(IP);
     expect((await response.json<ApiError>()).error.requestId).toBe(
       response.headers.get("X-Request-Id"),
     );
@@ -246,7 +319,7 @@ describe("output and service behavior", () => {
     const spec = await app.request("/api/openapi.json", {}, bindings);
     const json = await spec.json<typeof openApiDocument>();
     expect(json.openapi).toBe("3.1.0");
-    expect(json.paths["/api/v1/remove-background"].post.security).toEqual([{ bearerAuth: [] }]);
+    expect(json.paths["/api/v1/remove-background"].post.security).toEqual([]);
     expect(bindings.IMAGES.input).not.toHaveBeenCalled();
   });
 

@@ -5,24 +5,25 @@ description: Check Cloudflare access and billing before deploying the API.
 
 ## Cloudflare account
 
-You need permission to deploy Workers, set Worker secrets, and use Cloudflare Images transformations through the Images binding. Confirm that your account has the access required for foreground segmentation before sending image-processing requests.
+You need permission to deploy Workers, create SQLite-backed Durable Objects, and use Cloudflare Images transformations through the Images binding. Confirm that your account has the access required for foreground segmentation before sending image-processing requests.
 
 A custom domain is optional. The Worker can use its Cloudflare-provided `workers.dev` URL.
 
 ## What you pay for
 
-Cloudflare bills your account for Workers and Images usage under your enabled plans. nobg adds no payment layer and requires no database or upload bucket.
+Cloudflare bills your account for Workers, Durable Objects, and Images usage under your enabled plans. nobg adds no payment layer and uses Durable Object storage for quotas and requires no upload bucket.
 
 Check the current plan requirements and rates:
 
 - [Cloudflare Images pricing](https://developers.cloudflare.com/images/pricing/)
 - [Cloudflare Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/)
+- [Durable Objects pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/)
 - [Images limits and supported formats](https://developers.cloudflare.com/images/get-started/limits/)
 
-The rate limiter is approximate and local to Cloudflare locations. It limits bursts, not monthly spending. Review account usage as you add clients.
+The default monthly cap admits at most 10,000 image-processing attempts across the service. Validation errors do not spend this allowance, but processing failures do. The cap does not limit Workers or Durable Objects charges. Review account usage as you add clients.
 
 ## What you can check before image processing
 
-Installing dependencies, running local tests, and building the API do not call Cloudflare Images. After deploying, `/api/health` and the authentication check in the [deployment guide](/docs/quickstart/#5-check-the-endpoint-without-processing-an-image) do not process an image. Deployed requests still use Workers.
+Installing dependencies, running local tests, and building the API do not call Cloudflare Images. After deploying, `/api/health` and the upload-route check in the [deployment guide](/docs/quickstart/#4-check-the-endpoint-without-processing-an-image) do not process an image. Deployed requests still use Workers.
 
 The API has been tested locally with mocked Images responses. Paid-service access, background-removal quality, and production latency have not been validated for this release. The guide's image upload step is optional until you are ready to enable and use that service.

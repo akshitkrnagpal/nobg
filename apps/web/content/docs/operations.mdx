@@ -1,6 +1,6 @@
 ---
 title: Operate the Worker
-description: Inspect deployments and logs, rotate the API key, and publish updates.
+description: Inspect deployments and logs, adjust quotas, and publish updates.
 ---
 
 Run these commands from the repository root. They use the Worker name and account in `apps/api/wrangler.jsonc`.
@@ -18,7 +18,7 @@ Set `NOBG_URL` to your deployed API's base URL and check that it responds:
 curl --fail-with-body "$NOBG_URL/api/health"
 ```
 
-Health checks do not call Images or verify the API key. Use the [deployment guide](/docs/quickstart/#5-check-the-endpoint-without-processing-an-image) for a separate authentication check.
+Health checks do not call Images or verify quota storage. Use the [deployment guide](/docs/quickstart/#4-check-the-endpoint-without-processing-an-image) to check the upload route without processing an image.
 
 ## Inspect logs
 
@@ -30,21 +30,17 @@ Run requests from another terminal while the tail session is open. Press Ctrl+C 
 
 Keep the `X-Request-Id` response header or `error.requestId` from a failed request. Unexpected application errors log a `request_failed` event with that ID. Handled errors, including rejected uploads and Images failures, may only appear in the response rather than as application error logs.
 
-The handler does not log image bytes or API keys. Cloudflare observability can also record platform request metadata.
+The handler does not log image bytes or raw IPs. Cloudflare observability can also record platform request metadata.
 
-## Rotate the API key
+## Adjust quotas
 
-Generate a new random key with at least 32 characters, store it in your secret manager, and run:
+Edit the three quota variables in `apps/api/wrangler.jsonc` and deploy. See [configuration](/docs/configuration/#ip-quotas-and-monthly-budget) for counting and reset rules. Limits apply to the existing counters; increasing a limit allows more requests in the same window.
 
-```sh
-pnpm --filter @nobg/api exec wrangler secret put API_KEY
-```
-
-Wrangler publishes the updated secret. Update your callers to use the new value. There is no overlap period with two valid keys, so coordinate this change with clients. Requests using the old key return `401 unauthorized` once the change takes effect.
+Preserve the Durable Object binding, class, and object naming when upgrading. Renaming or deleting the quota namespace starts fresh counters and can bypass the monthly cap. Do not clear storage to resolve a routine rate-limit response.
 
 ## Upgrade the Worker
 
-Update your checkout to the version you want to deploy. Preserve your Worker name, account, domain, limits, and rate limiter namespace when merging changes to `apps/api/wrangler.jsonc`.
+Update your checkout to the version you want to deploy. Preserve your Worker name, account, domain, limits, and Durable Object namespace when merging changes to `apps/api/wrangler.jsonc`.
 
 ```sh
 pnpm install --frozen-lockfile
@@ -54,7 +50,7 @@ pnpm --filter @nobg/api build
 pnpm --filter @nobg/api run deploy
 ```
 
-Record the version ID Wrangler prints and check `/api/health`. Normal code deployments retain Worker secrets; you do not need to enter the key for every update.
+Record the version ID Wrangler prints and check `/api/health`. Normal code deployments retain quota counters.
 
 ## Roll back a code deployment
 
@@ -65,8 +61,8 @@ pnpm --filter @nobg/api exec wrangler deployments list
 pnpm --filter @nobg/api exec wrangler rollback VERSION_ID
 ```
 
-Replace `VERSION_ID` with the version to restore and review Wrangler's confirmation. Cloudflare can restrict rollbacks across binding or secret changes. Check the active key and configuration after a rollback; it is not a substitute for rotating a compromised key.
+Replace `VERSION_ID` with the version to restore and review Wrangler's confirmation. Cloudflare can restrict rollbacks across binding or secret changes. Review configuration and storage migrations before rolling back. A rollback does not undo quota usage.
 
 ## Monitor usage
 
-Review Workers and Images usage in your Cloudflare account. The built-in rate limiter reduces bursts, but its counters are local to each Cloudflare location. It does not enforce a monthly budget.
+Review Workers, Durable Objects, and Images usage in your Cloudflare account. The monthly cap bounds image-processing attempts, including failed attempts. It does not cap Workers requests, Durable Object operations, or other account usage.

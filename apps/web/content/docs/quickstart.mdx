@@ -1,6 +1,6 @@
 ---
 title: Deploy the API Worker
-description: Configure and deploy nobg, set its secret, and check your endpoint.
+description: Configure and deploy nobg with IP quotas, then check your endpoint.
 ---
 
 Run the commands below from the repository root. They deploy the API Worker in `apps/api`.
@@ -32,7 +32,8 @@ Open `apps/api/wrangler.jsonc` and review these settings:
 | --- | --- |
 | `name` | Keep `nobg-api` or choose a name that does not conflict with another Worker in your account. |
 | `images.binding` | Keep `IMAGES`, the binding name used by the handler. |
-| `ratelimits[0].namespace_id` | Choose a numeric namespace ID unused by your other rate limiters. The example is `1001`. |
+| `durable_objects` and `migrations` | Keep the supplied `QUOTAS` binding and SQLite class migration. |
+| Quota variables | Defaults are 5 requests/minute and 20 image attempts/day per IP, plus 10,000 image attempts/month across the service. |
 | `vars.MAX_UPLOAD_BYTES` | Keep `10485760` for a 10 MiB file limit, or adjust it within the supported range. |
 
 Keep `main`, `compatibility_flags`, and both binding names as supplied. If Wrangler can access multiple accounts, add your intended `account_id` to this file. See [Worker configuration](/docs/configuration/) for the full settings.
@@ -48,21 +49,11 @@ pnpm --filter @nobg/api run deploy
 
 The `build` command bundles the API with Wrangler's `--dry-run` option. The `deploy` command publishes it. Tests use mocked Images responses.
 
-Wrangler prints a URL such as `https://nobg-api.YOUR-SUBDOMAIN.workers.dev`. Save that URL. The upload endpoint returns `503 not_configured` until you set the API key.
+Wrangler prints a URL such as `https://nobg-api.YOUR-SUBDOMAIN.workers.dev`. Save that URL. The upload endpoint is public and requires no API key.
 
 Use the filtered deploy command above. The repository's root `pnpm run deploy` command publishes the documentation website.
 
-## 4. Set the API key
-
-Generate a random key of at least 32 characters in your password manager. Keep a copy there and paste it into Wrangler's interactive prompt:
-
-```sh
-pnpm --filter @nobg/api exec wrangler secret put API_KEY
-```
-
-`API_KEY` belongs to this Worker. Do not put it in `wrangler.jsonc`, Git, or frontend JavaScript. A local `.dev.vars` file does not configure a deployed Worker's secrets.
-
-## 5. Check the endpoint without processing an image
+## 4. Check the endpoint without processing an image
 
 Set `NOBG_URL` to the URL Wrangler printed, with no trailing slash:
 
@@ -77,19 +68,17 @@ Expect:
 { "status": "ok", "service": "nobg", "version": "0.1.0" }
 ```
 
-This confirms the Worker responds. It does not verify the key, Images binding, or paid-service access.
+This confirms the Worker responds. It does not verify quota storage, the Images binding, or paid-service access.
 
-Load the same key into your shell as `NOBG_API_KEY` using your secret manager. To check authentication without uploading an image:
+To check the upload route without processing an image:
 
 ```sh
-curl --include --request POST \
-  "$NOBG_URL/api/v1/remove-background" \
-  -H "Authorization: Bearer $NOBG_API_KEY"
+curl --include --request POST "$NOBG_URL/api/v1/remove-background"
 ```
 
-Expect `400 invalid_request` because the body is missing. That response means the request passed the key check. `401` means the key did not match; `503` means the Worker is not configured. This request does not call Images, but it counts toward the rate limit.
+Expect `400 invalid_request` because the body is missing. This checks the IP minute counter without calling Images. It uses one request from the minute allowance.
 
-## 6. Process an image when you are ready
+## 5. Process an image when you are ready
 
 This step calls Cloudflare Images and may incur charges. You can stop after the checks above until your account has the required access.
 
@@ -98,7 +87,6 @@ With `photo.jpg` in your working directory:
 ```sh
 curl --fail-with-body \
   "$NOBG_URL/api/v1/remove-background" \
-  -H "Authorization: Bearer $NOBG_API_KEY" \
   -F "image=@photo.jpg" \
   --output nobg.png
 ```

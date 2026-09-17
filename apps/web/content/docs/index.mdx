@@ -3,7 +3,7 @@ title: Deploy your own API
 description: Run nobg as a Cloudflare Worker in your account.
 ---
 
-nobg is a background removal API you deploy to Cloudflare Workers. Your backend uploads an image with an API key, and the Worker returns a transparent PNG or WebP using Cloudflare Images.
+nobg is a background removal API you deploy to Cloudflare Workers. Your backend uploads an image, and the Worker returns a transparent PNG or WebP using Cloudflare Images.
 
 [Follow the deployment guide](/docs/quickstart/) to install the project, configure your Worker, and publish the API.
 
@@ -15,7 +15,7 @@ nobg is a background removal API you deploy to Cloudflare Workers. Your backend 
 
 ## What gets deployed
 
-You deploy one Hono Worker from `apps/api`. It has an Images binding, a rate limiter, and an API key stored as a Worker secret. There is no database or upload bucket to provision.
+You deploy one Hono Worker from `apps/api`. It has an Images binding and SQLite-backed Durable Objects for IP quotas and a shared monthly budget. Wrangler creates the quota storage on deployment. No upload bucket is needed.
 
 The API runs independently of this documentation site. You do not need to build or host the website to use it. All deployment commands in these guides target `@nobg/api` explicitly.
 
@@ -23,11 +23,11 @@ The API runs independently of this documentation site. You do not need to build 
 
 - [Call the API](/docs/examples/) from curl, JavaScript, or Python.
 - [Configure your Worker](/docs/configuration/) to adjust limits or add a domain.
-- [Operate the service](/docs/operations/) to inspect logs, rotate the key, and deploy updates.
+- [Operate the service](/docs/operations/) to inspect logs, adjust quotas, and deploy updates.
 - [Troubleshoot errors](/docs/troubleshooting/) using the response code and request ID.
 
 ## Processing and validation
 
-You control the Worker and API key. Cloudflare's managed Images service processes the image bytes and bills your account for usage. nobg does not store uploads or results.
+You control the Worker and its usage limits. Cloudflare's managed Images service processes the image bytes and bills your account for usage. nobg does not store uploads or results.
 
 The API has been tested locally with mocked Images responses. Background removal against the paid service has not been validated for this release. The deployment guide separates checks that do not call Images from an optional image-processing request.

@@ -11,10 +11,9 @@ From the repository root:
 
 ```sh
 pnpm install --frozen-lockfile
-cp apps/api/.dev.vars.example apps/api/.dev.vars
 ```
 
-Replace the placeholder in `apps/api/.dev.vars` with a random key of at least 32 characters. This file is ignored by Git and only supplies local secrets.
+No secrets are needed. Quota defaults are in `apps/api/wrangler.jsonc`. Wrangler stores local quota state in `.wrangler/state`.
 
 ```sh
 pnpm --filter @nobg/api dev
@@ -26,6 +25,8 @@ The API listens at `http://localhost:8787`. Check it with:
 curl --fail-with-body http://localhost:8787/api/health
 ```
 
+For direct local upload-route requests, include `CF-Connecting-IP: 127.0.0.1` if the local runtime does not add it. Production callers should not set this header; Cloudflare supplies it.
+
 ## Run checks
 
 ```sh
@@ -34,10 +35,10 @@ pnpm --filter @nobg/api test
 pnpm --filter @nobg/api build
 ```
 
-Tests mock the Images binding to check authentication, validation, errors, and response handling. The build command runs `wrangler deploy --dry-run` and writes a local bundle. Neither command deploys a Worker.
+Tests mock the Images binding to check IP quotas, validation, errors, and response handling. Separate tests exercise real local Durable Objects for concurrency, persistence, and quota expiry. The build command runs `wrangler deploy --dry-run` and writes a local bundle. Neither command deploys a Worker.
 
 ## Local image-processing limits
 
 The local Wrangler runtime does not support background segmentation. An upload can fail at the Images inspection or transformation stage even when the HTTP request is correct. A passing mocked test does not establish background-removal quality or access to the deployed Images service.
 
-The API's development command uses `--local` and the config has no remote bindings. Use the [deployment guide](/docs/quickstart/) when you are ready to publish the Worker. Configure `API_KEY` as a Cloudflare secret separately; `.dev.vars` is not uploaded.
+The API's development command uses `--local` and the config has no remote bindings. Use the [deployment guide](/docs/quickstart/) when you are ready to publish the Worker.

@@ -7,15 +7,13 @@ Background removal in your own Cloudflare account. Send an image to a Hono API a
 ## Workspace
 
 - `apps/web`: Astro + Fumadocs landing page and documentation, scaffolded with `pnpm create fumadocs-app --template astro`.
-- `apps/api`: Hono Cloudflare Worker, authenticated with a Bearer API key.
+- `apps/api`: Hono Cloudflare Worker, public endpoint with persistent IP quotas.
 - `packages/contracts`: shared formats, limits, and error types.
 
 Node.js 22.14+ and pnpm 11 are required.
 
 ```sh
 pnpm install
-cp apps/api/.dev.vars.example apps/api/.dev.vars
-# Replace the placeholder with a random API key of at least 32 characters.
 pnpm dev
 ```
 
@@ -44,20 +42,20 @@ Enable the required Cloudflare Images access in your account first. Review curre
 
 ```sh
 pnpm --filter @nobg/api run deploy
-pnpm --filter @nobg/api exec wrangler secret put API_KEY
 ```
 
-Keep API keys in secrets, never frontend code. The endpoint fails closed until a valid key is configured. Calls use the API Worker's URL, not the website URL:
+No API key or account is needed. Wrangler creates SQLite-backed Durable Objects for the quota counters. Calls use the API Worker's URL, not the website URL:
 
 ```sh
 curl --fail-with-body \
   https://YOUR-WORKER.workers.dev/api/v1/remove-background \
-  -H "Authorization: Bearer $NOBG_API_KEY" \
   -F "image=@photo.jpg" \
   --output nobg.png
 ```
 
-Default limits: 10 MiB per file, 25 megapixels, and 30 authenticated attempts per minute per Cloudflare location. Rate limiting is approximate and is not a global spending cap. Images pass through the API without application storage. Cloudflare still processes the image bytes.
+Default limits: 10 MiB per file, 25 megapixels, 5 requests per UTC minute and 20 validated image attempts per UTC day per IP. A shared cap allows up to 10,000 processing attempts per UTC calendar month. Processing failures count. Every `429` includes `Retry-After`. Quotas persist across restarts and deployments; variables in `apps/api/wrangler.jsonc` configure the limits.
+
+The monthly cap bounds image attempts, not Workers or Durable Objects charges. People behind the same IP share allowances. Counters store usage and expiry times under hashed-IP object names; uploads and results are not stored by the application. Cloudflare still processes the image bytes.
 
 ## Documentation
 
