@@ -45,6 +45,14 @@ The API's development command uses `--local` and the config has no remote bindin
 
 ## Test the browser demo
 
-Set `PUBLIC_API_URL=http://localhost:8787` when starting the website, and set `ALLOWED_ORIGINS=http://localhost:4321` in `apps/api/.dev.vars`. Use matching hostnames if you prefer `127.0.0.1`.
+Copy the example files from the repository root before starting both apps:
+
+```sh
+cp apps/web/.env.example apps/web/.env
+cp apps/api/.dev.vars.example apps/api/.dev.vars
+pnpm dev
+```
+
+These files set `PUBLIC_API_URL=http://localhost:8787` for the website and `ALLOWED_ORIGINS=http://localhost:4321` for the API. Use matching hostnames if you prefer `127.0.0.1`.
 
 The demo uploads only when you choose **Remove background**. Local Images cannot perform segmentation; use mocked responses when testing preview, download, and error states without paid processing.

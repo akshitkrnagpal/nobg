@@ -29,6 +29,8 @@ Open **[nobg.akshit.io](https://nobg.akshit.io)**, choose an image, and click **
 
 The hosted service allows 20 image attempts a day and 5 requests a minute per IP. People on the same network share that allowance. There is also a shared limit of 10,000 image attempts a month. Processing failures count toward the image limits.
 
+[![The nobg demo showing an original photo and its background removed](docs/assets/demo.png)](https://nobg.akshit.io)
+
 ## One request from your app
 
 Send a photo and save the response as an image:
@@ -64,7 +66,9 @@ nobg has its own API. If you are moving from remove.bg, update your integration 
 Requires Node.js 22.14+ and pnpm 11.
 
 ```sh
-pnpm install
+pnpm install --frozen-lockfile
+cp apps/web/.env.example apps/web/.env
+cp apps/api/.dev.vars.example apps/api/.dev.vars
 pnpm dev
 ```
 
@@ -81,3 +85,11 @@ Run `pnpm check` and `pnpm build` to check the project. Tests use mocked Images 
 See the [local development guide](https://nobg.akshit.io/docs/local-development/) for browser demo configuration and the [deployment guide](https://nobg.akshit.io/docs/quickstart/) to publish the API. The root `pnpm run deploy` command publishes only the website.
 
 </details>
+
+## Contribute
+
+Found a bug or have an idea? [Open an issue](https://github.com/akshitkrnagpal/nobg/issues/new/choose). For code or docs changes, start with [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+[Apache-2.0](LICENSE). Copyright 2026 Akshit Kr Nagpal.

@@ -1,1 +1,3 @@
+# Copy to apps/api/.dev.vars for local browser development.
 # No API key is required. Quotas are configured in wrangler.jsonc.
+ALLOWED_ORIGINS=http://localhost:4321

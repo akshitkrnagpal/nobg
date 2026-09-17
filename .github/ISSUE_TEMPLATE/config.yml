@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://nobg.akshit.io/docs/
+    about: Setup, API examples, quotas, and troubleshooting.
+  - name: Security reports
+    url: https://github.com/akshitkrnagpal/nobg/blob/main/SECURITY.md
+    about: Read the private reporting instructions before sharing vulnerability details.

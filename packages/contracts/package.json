@@ -8,5 +8,6 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
-  }
+  },
+  "license": "Apache-2.0"
 }

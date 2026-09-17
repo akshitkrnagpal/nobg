@@ -1,6 +1,9 @@
 packages:
   - apps/*
   - packages/*
+overrides:
+  # The test runtime still pins a version affected by GHSA-rgj7-g3m4-5g8c.
+  sharp@0.35.2: 0.35.4
 allowBuilds:
   esbuild: true
   workerd: true
