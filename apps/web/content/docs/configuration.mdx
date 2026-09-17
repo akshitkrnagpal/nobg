@@ -16,6 +16,7 @@ The deployment configuration is `apps/api/wrangler.jsonc`. Commands using `pnpm 
 | `workers_dev` | `true` | Publishes a `workers.dev` endpoint |
 | `routes` | `api.nobg.akshit.io` | Project deployment hostname; remove or replace it when self-hosting |
 | `images.binding` | `IMAGES` | Gives the handler access to Cloudflare Images |
+| `vars.ALLOWED_ORIGINS` | The two nobg website origins | Comma-separated exact origins allowed to read browser upload responses; use an empty string to disable CORS |
 | `vars.MAX_UPLOAD_BYTES` | `10485760` | File size cap, 10 MiB |
 | `vars.IP_REQUESTS_PER_MINUTE` | `5` | Requests per IP per UTC calendar minute |
 | `vars.IP_IMAGES_PER_DAY` | `20` | Validated image attempts per IP per UTC day |

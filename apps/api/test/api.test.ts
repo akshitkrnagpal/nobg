@@ -334,3 +334,69 @@ describe("output and service behavior", () => {
     expect(response.headers.get("Access-Control-Allow-Origin")).toBeNull();
   });
 });
+
+describe("browser demo access", () => {
+  it.each(["https://nobg.akshit.io", "https://nobg.akntech.workers.dev"])(
+    "allows preflight from %s without consuming quota",
+    async (origin) => {
+      const response = await app.request(
+        endpoint,
+        {
+          method: "OPTIONS",
+          headers: {
+            Origin: origin,
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type",
+          },
+        },
+        bindings,
+      );
+      expect(response.status).toBe(204);
+      expect(response.headers.get("Access-Control-Allow-Origin")).toBe(origin);
+      expect(response.headers.get("Access-Control-Allow-Methods")).toBe("POST,OPTIONS");
+      expect(response.headers.get("Access-Control-Allow-Credentials")).toBeNull();
+      expect(consumeIp).not.toHaveBeenCalled();
+      expect(bindings.IMAGES.info).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(["https://elsewhere.example", "https://nobg.akshit.io.evil.example", "null"])(
+    "does not grant browser access to %s",
+    async (origin) => {
+      const response = await app.request(
+        endpoint,
+        { method: "OPTIONS", headers: { Origin: origin, "Access-Control-Request-Method": "POST" } },
+        bindings,
+      );
+      expect(response.headers.get("Access-Control-Allow-Origin")).toBeNull();
+    },
+  );
+
+  it("returns readable binary and quota errors to the website", async () => {
+    const origin = "https://nobg.akshit.io";
+    const send = () =>
+      app.request(
+        endpoint,
+        { method: "POST", headers: { Origin: origin, "CF-Connecting-IP": IP }, body: upload() },
+        bindings,
+      );
+    const success = await send();
+    expect(success.status).toBe(200);
+    expect(success.headers.get("Access-Control-Allow-Origin")).toBe(origin);
+    expect(success.headers.get("Access-Control-Expose-Headers")).toBe("Retry-After,X-Request-Id");
+    consumeIp.mockResolvedValue({ success: false, retryAfter: 30 });
+    const denied = await send();
+    expect(denied.status).toBe(429);
+    expect(denied.headers.get("Access-Control-Allow-Origin")).toBe(origin);
+    expect(denied.headers.get("Retry-After")).toBe("30");
+  });
+
+  it("supports disabling browser access for self-hosting", async () => {
+    const response = await app.request(
+      endpoint,
+      { method: "OPTIONS", headers: { Origin: "https://nobg.akshit.io" } },
+      { ...bindings, ALLOWED_ORIGINS: "" },
+    );
+    expect(response.headers.get("Access-Control-Allow-Origin")).toBeNull();
+  });
+});

@@ -73,4 +73,6 @@ with open("nobg.png", "wb") as result:
 
 ## Browser applications
 
-nobg does not enable cross-origin browser access by default. Use a same-origin route or your own backend to forward uploads. Requests forwarded by one backend share that backend’s outbound IP allowance. On `429`, wait for the `Retry-After` interval before trying again.
+The hosted demo calls the API directly from `https://nobg.akshit.io`. For a self-hosted browser app, add its exact origin to the API Worker’s `ALLOWED_ORIGINS` variable. Separate multiple origins with commas. The API exposes `Retry-After` and `X-Request-Id` to allowed origins; requests do not need cookies or credentials.
+
+Direct browser uploads retain each visitor’s IP allowance. Requests forwarded by one backend share that backend’s outbound IP allowance. CORS controls browser response access, not authentication. On `429`, wait for the `Retry-After` interval before trying again.

@@ -8,6 +8,7 @@ import {
   outputFormats,
 } from "@nobg/contracts";
 import { type Context, Hono } from "hono";
+import { cors } from "hono/cors";
 import { openApiDocument } from "./openapi";
 
 export { QuotaCounter } from "./quota";
@@ -103,6 +104,20 @@ function failure(
 
 app.get("/api/health", (c) => c.json({ status: "ok", service: "nobg", version: "0.1.0" }));
 app.get("/api/openapi.json", (c) => c.json(openApiDocument));
+
+app.use(
+  "/api/v1/remove-background",
+  cors({
+    origin: (origin, c: Context<AppEnv>) => {
+      const allowed = (c.env.ALLOWED_ORIGINS ?? "").split(",").map((value) => value.trim());
+      return origin && allowed.includes(origin) ? origin : undefined;
+    },
+    allowMethods: ["POST", "OPTIONS"],
+    allowHeaders: ["Content-Type"],
+    exposeHeaders: ["Retry-After", "X-Request-Id"],
+    maxAge: 86400,
+  }),
+);
 
 app.post("/api/v1/remove-background", async (c) => {
   const limits = {

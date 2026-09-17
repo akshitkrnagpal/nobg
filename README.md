@@ -34,7 +34,7 @@ Tests use mocked Images responses in the Workers runtime. The API build is a Wra
 pnpm run deploy
 ```
 
-This builds and publishes **only the static website** as `nobg`. It does not deploy the API or enable paid image processing. The website has no live upload interface.
+This builds and publishes **only the static website** as `nobg`. It does not deploy the API or enable paid image processing. The website includes an upload demo that calls `https://api.nobg.akshit.io` directly. Set `PUBLIC_API_URL` when building the website to use another API host, and add the frontend origin to the API’s `ALLOWED_ORIGINS`.
 
 ## Self-host the API
 
@@ -65,6 +65,6 @@ The public API includes `GET /api/health` for liveness and `GET /api/openapi.jso
 
 ## Brand
 
-Always spell the name **nobg**. The wordmark uses charcoal `#18181B` for `no` and teal `#0D9488` for `bg`. The homepage's comparison is an original SVG illustration, not a result produced by the service.
+Always spell the name **nobg**. The wordmark uses charcoal `#18181B` for `no` and teal `#0D9488` for `bg`. The homepage previews the uploaded image and the result returned by the API.
 
 Generated transparent PNG assets: [icon](apps/web/public/brand/nobg-icon-v1.png) and [horizontal logo](apps/web/public/brand/nobg-logo-v1.png). The [generation prompts](docs/brand/imagegen-prompts.md) record the design direction and tool used.

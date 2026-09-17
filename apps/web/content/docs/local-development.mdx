@@ -42,3 +42,9 @@ Tests mock the Images binding to check IP quotas, validation, errors, and respon
 The local Wrangler runtime does not support background segmentation. An upload can fail at the Images inspection or transformation stage even when the HTTP request is correct. A passing mocked test does not establish background-removal quality or access to the deployed Images service.
 
 The API's development command uses `--local` and the config has no remote bindings. Use the [deployment guide](/docs/quickstart/) when you are ready to publish the Worker.
+
+## Test the browser demo
+
+Set `PUBLIC_API_URL=http://localhost:8787` when starting the website, and set `ALLOWED_ORIGINS=http://localhost:4321` in `apps/api/.dev.vars`. Use matching hostnames if you prefer `127.0.0.1`.
+
+The demo uploads only when you choose **Remove background**. Local Images cannot perform segmentation; use mocked responses when testing preview, download, and error states without paid processing.

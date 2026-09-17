@@ -34,6 +34,7 @@ Open `apps/api/wrangler.jsonc` and review these settings:
 | `routes` | Remove the supplied `api.nobg.akshit.io` route to use your `workers.dev` URL, or replace it with a hostname in your own Cloudflare zone. |
 | `images.binding` | Keep `IMAGES`, the binding name used by the handler. |
 | `durable_objects` and `migrations` | Keep the supplied `QUOTAS` binding and SQLite class migration. |
+| `vars.ALLOWED_ORIGINS` | Set your frontend origin if you want a browser demo, or use an empty string for server-only use. |
 | Quota variables | Defaults are 5 requests/minute and 20 image attempts/day per IP, plus 10,000 image attempts/month across the service. |
 | `vars.MAX_UPLOAD_BYTES` | Keep `10485760` for a 10 MiB file limit, or adjust it within the supported range. |
 

@@ -1,243 +1,124 @@
 ---
-import {
-  ArrowRightIcon,
-  ArrowsHorizontalIcon,
-  CheckIcon,
-  CopyIcon,
-  PlusIcon,
-} from "@phosphor-icons/react/ssr";
-import { Home } from "@/components/home";
+import { ArrowRightIcon, CheckIcon, CopyIcon, PlusIcon } from "@phosphor-icons/react/ssr";
+import { Landing } from "@/components/landing";
 import Layout from "@/components/layout.astro";
 import { Wordmark } from "@/components/wordmark";
 
-const command = `curl --fail-with-body \\\n  "$NOBG_URL/api/v1/remove-background" \\\n  -F "image=@photo.jpg" \\\n  --output nobg.png`;
+const command = `curl --fail-with-body \\\n  "https://api.nobg.akshit.io/api/v1/remove-background" \\\n  -F "image=@photo.jpg" \\\n  --output nobg.png`;
 const faqs = [
   [
-    "What does self-hosted mean here?",
-    "You deploy the API into your own Cloudflare account. You control the code, limits, and deployment. Cloudflare Images processes the images.",
+    "Is the demo free?",
+    "Yes. Each IP gets 20 image attempts a day and 5 requests a minute. People sharing a network share the allowance. The demo also has a shared monthly limit; failed processing attempts count.",
   ],
   [
-    "Is nobg free to run?",
-    "Cloudflare charges for Images, Workers, and Durable Objects usage. Check the costs guide for account requirements before deploying.",
+    "What can I upload?",
+    "JPEG, PNG, or WebP files up to 10 MiB and 25 megapixels. The demo returns a transparent PNG. Animated images are returned as a still image.",
   ],
   [
     "Do you store my images?",
-    "nobg does not save uploads or results to a database or bucket. Cloudflare Images processes each upload and nobg returns the result.",
+    "nobg does not save your uploads or results. Cloudflare Images processes the image when you choose Remove background. Download your result before leaving the page.",
   ],
   [
-    "Can I use it with my existing app?",
-    "Send a multipart HTTP request from your backend. The docs include curl, JavaScript, and Python examples.",
+    "Can I run my own service?",
+    "Yes. Deploy the API Worker in your own Cloudflare account and choose your own limits. Cloudflare charges for Images, Workers, and Durable Objects usage.",
   ],
   [
-    "Is this a drop-in replacement for remove.bg?",
-    "You will need to update your integration to use nobg's API. Cloudflare Images processes the images, so results may differ from remove.bg.",
+    "Can I use it in my app?",
+    "The public API accepts multipart uploads without an API key. Use our endpoint or deploy your own. The docs include curl, JavaScript, and Python examples.",
   ],
 ];
 ---
 
-<Layout>
+<Layout
+  title="nobg · Remove image backgrounds"
+  description="Upload a photo and download a transparent PNG. Try the free nobg demo, use the API, or self-host it in your Cloudflare account."
+>
   <a class="skip-link" href="#main">
     Skip to content
   </a>
-  <Home pathname={Astro.url.pathname} params={Astro.params} client:load>
-    <div id="main" tabindex="-1">
-      <section class="hero wrap">
-        <div class="hero-copy">
-          <h1>
-            Self-hosted
-            <br />
-            <span>background removal</span>
-          </h1>
-          <p class="hero-description">
-            Run nobg in your Cloudflare account. Send an image to the API and receive a transparent
-            PNG or WebP.
-          </p>
-          <div class="hero-actions">
-            <a class="button primary" href="/docs/quickstart/">
-              Self-host nobg <ArrowRightIcon size={18} aria-hidden="true" />
-            </a>
-            <a class="text-link" href="/docs/api/">
-              Read the API docs <ArrowRightIcon size={18} aria-hidden="true" />
-            </a>
-          </div>
-          <p class="setup-note">
-            Uses Cloudflare Images.{" "}
-            <a href="/docs/costs/">
-              Check requirements & costs <ArrowRightIcon size={18} aria-hidden="true" />
-            </a>
-          </p>
-        </div>
-        <figure class="hero-visual">
-          <div class="comparison" id="comparison" style="--split: 50%">
-            <div class="comparison-scene">
-              <div class="scene-window"></div>
-              <div class="scene-floor"></div>
-              <img
-                src="/plant.svg"
-                width="640"
-                height="720"
-                alt="An illustrated rubber plant in a terracotta pot"
-                fetchpriority="high"
-              />
-            </div>
-            <div class="comparison-cutout">
-              <img src="/plant.svg" width="640" height="720" alt="" />
-            </div>
-            <span class="image-label before">Original</span>
-            <span class="image-label after">Transparent</span>
-            <div class="comparison-line">
-              <span aria-hidden="true">
-                <ArrowsHorizontalIcon size={22} />
-              </span>
-            </div>
-            <input
-              id="comparison-control"
-              type="range"
-              min="0"
-              max="100"
-              value="50"
-              aria-label="Compare the illustration with and without a background"
-              aria-describedby="comparison-caption"
-              aria-valuetext="50% background visible"
-            />
-          </div>
-          <figcaption class="visual-caption" id="comparison-caption">
-            <span>Drag or use arrow keys to compare.</span>
-            <span>Illustration, not a processed result.</span>
-          </figcaption>
-        </figure>
-      </section>
-      <section id="how-it-works" class="section wrap">
-        <h2>How to set it up</h2>
-        <div class="steps">
-          <article>
-            <h3>1. Deploy the Worker</h3>
-            <p>Enable Cloudflare Images, choose your usage limits, and deploy the Hono Worker.</p>
-            <a href="/docs/quickstart/">
-              Deployment guide <ArrowRightIcon size={18} aria-hidden="true" />
-            </a>
-          </article>
-          <article>
-            <h3>2. Send an image</h3>
-            <p>Upload a JPEG, PNG, or WebP from your backend.</p>
-            <a href="/docs/api/">
-              API reference <ArrowRightIcon size={18} aria-hidden="true" />
-            </a>
-          </article>
-          <article>
-            <h3>3. Save the result</h3>
-            <p>Receive the image bytes directly. Save them to a file or use them in your app.</p>
-            <a href="/docs/examples/">
-              Code examples <ArrowRightIcon size={18} aria-hidden="true" />
-            </a>
-          </article>
-        </div>
-      </section>
-      <section class="api-section wrap">
-        <div class="api-copy">
-          <h2>Make a request</h2>
-          <p>
-            The API accepts a multipart upload and returns image bytes. Call it with any HTTP
-            client. No API key is required.
-          </p>
-          <a class="text-link" href="/docs/examples/">
-            See the integration examples <ArrowRightIcon size={18} aria-hidden="true" />
-          </a>
-        </div>
-        <div class="code-window">
-          <div class="code-top">
-            <span>POST /api/v1/remove-background</span>
-            <button id="copy-code" type="button" aria-label="Copy curl example">
-              <span data-copy-label>Copy</span>
-              <CopyIcon size={16} aria-hidden="true" data-copy-icon />
-              <CheckIcon size={16} aria-hidden="true" data-copied-icon />
-            </button>
-          </div>
-          <pre
-            tabindex="0"
-            aria-label="curl request example"
-          ><code id="curl-code">{command}</code></pre>
-          <p class="code-caption">
-            Set <code>NOBG_URL</code> to your deployed API URL.
-          </p>
-          <span id="copy-status" class="sr-only" role="status" aria-live="polite"></span>
-        </div>
-      </section>
-      <section class="operating-notes wrap" aria-labelledby="operating-title">
-        <div>
-          <h2 id="operating-title">Formats and limits</h2>
-          <p>
-            The Worker runs on Hono and uses Cloudflare Images for background removal. Durable
-            Objects keep IP quotas and a monthly image budget.
-          </p>
-          <a class="text-link" href="/docs/architecture/">
-            How requests are handled <ArrowRightIcon size={18} aria-hidden="true" />
-          </a>
-        </div>
-        <dl>
-          <div>
-            <dt>Input</dt>
-            <dd>JPEG, PNG, WebP</dd>
-          </div>
-          <div>
-            <dt>Default limits</dt>
-            <dd>10 MiB · 25 megapixels</dd>
-          </div>
-          <div>
-            <dt>Output</dt>
-            <dd>Transparent PNG or WebP</dd>
-          </div>
-          <div>
-            <dt>Per IP</dt>
-            <dd>5 requests/minute · 20 images/day</dd>
-          </div>
-          <div>
-            <dt>Monthly budget</dt>
-            <dd>10,000 image attempts across the service</dd>
-          </div>
-          <div>
-            <dt>Storage</dt>
-            <dd>No uploads or results saved by nobg</dd>
-          </div>
-        </dl>
-      </section>
-      <section class="faq wrap">
-        <div>
-          <h2>Common questions</h2>
-          <a class="text-link" href="/docs/">
-            More in the docs <ArrowRightIcon size={18} aria-hidden="true" />
-          </a>
-        </div>
-        <div class="faq-list">
-          {faqs.map(([question, answer]) => (
-            <details>
-              <summary>
-                {question}
-                <PlusIcon className="faq-icon" size={20} aria-hidden="true" />
-              </summary>
-              <p>{answer}</p>
-            </details>
-          ))}
-        </div>
-      </section>
-      <section class="closing wrap">
-        <div>
-          <h2>Deploy your API</h2>
-          <p>
-            The setup guide covers Cloudflare configuration, usage limits, and your first request.
-          </p>
-        </div>
-        <a class="button primary" href="/docs/quickstart/">
-          Open the setup guide <ArrowRightIcon size={18} aria-hidden="true" />
+  <Landing pathname={Astro.url.pathname} params={Astro.params} client:load>
+    <section id="how-it-works" class="section wrap">
+      <h2>From photo to transparent PNG</h2>
+      <div class="steps">
+        <article>
+          <h3>Choose your photo</h3>
+          <p>Drop in a JPEG, PNG, or WebP. Preview it before sending anything.</p>
+        </article>
+        <article>
+          <h3>Remove the background</h3>
+          <p>Cloudflare Images separates the foreground from the background.</p>
+        </article>
+        <article>
+          <h3>Download the result</h3>
+          <p>Save the transparent PNG for your shop, design, or next project.</p>
+        </article>
+      </div>
+    </section>
+    <section class="api-section wrap">
+      <div class="api-copy">
+        <h2>Use it in your app</h2>
+        <p>
+          The API accepts a multipart upload and returns image bytes. Call it with any HTTP client.
+          No API key is required.
+        </p>
+        <a class="text-link" href="/docs/examples/">
+          See the integration examples <ArrowRightIcon size={18} aria-hidden="true" />
         </a>
-      </section>
-    </div>
-  </Home>
+      </div>
+      <div class="code-window">
+        <div class="code-top">
+          <span>POST /api/v1/remove-background</span>
+          <button id="copy-code" type="button" aria-label="Copy curl example">
+            <span data-copy-label>Copy</span>
+            <CopyIcon size={16} aria-hidden="true" data-copy-icon />
+            <CheckIcon size={16} aria-hidden="true" data-copied-icon />
+          </button>
+        </div>
+        <pre
+          tabindex="0"
+          aria-label="curl request example"
+        ><code id="curl-code">{command}</code></pre>
+        <p class="code-caption">The public API uses the same free allowance as the demo.</p>
+        <span id="copy-status" class="sr-only" role="status" aria-live="polite"></span>
+      </div>
+    </section>
+    <section class="faq wrap">
+      <div>
+        <h2>Common questions</h2>
+        <a class="text-link" href="/docs/">
+          More in the docs <ArrowRightIcon size={18} aria-hidden="true" />
+        </a>
+      </div>
+      <div class="faq-list">
+        {faqs.map(([question, answer]) => (
+          <details>
+            <summary>
+              {question}
+              <PlusIcon className="faq-icon" size={20} aria-hidden="true" />
+            </summary>
+            <p>{answer}</p>
+          </details>
+        ))}
+      </div>
+    </section>
+    <section class="closing wrap">
+      <div>
+        <h2>Your own endpoint. Your own limits.</h2>
+        <p>
+          Deploy nobg in your Cloudflare account. The guide covers setup, costs, and your first
+          request.
+        </p>
+      </div>
+      <a class="button primary" href="/docs/quickstart/">
+        Open the setup guide <ArrowRightIcon size={18} aria-hidden="true" />
+      </a>
+    </section>
+  </Landing>
   <footer class="site-footer wrap">
     <a href="/" aria-label="nobg home">
       <Wordmark />
     </a>
-    <p>Self-hosted on Cloudflare.</p>
+    <p>Background removal, built on Cloudflare.</p>
     <nav aria-label="Footer navigation">
       <a href="/docs/">Docs</a>
       <a href="/docs/api/">API</a>
@@ -246,15 +127,6 @@ const faqs = [
   </footer>
 </Layout>
 <script>
-  document.addEventListener("input", (event) => {
-    const slider = event.target;
-    if (!(slider instanceof HTMLInputElement) || slider.id !== "comparison-control") return;
-    document
-      .querySelector<HTMLElement>("#comparison")
-      ?.style.setProperty("--split", `${slider.value}%`);
-    slider.setAttribute("aria-valuetext", `${slider.value}% background visible`);
-  });
-
   document.addEventListener("click", async (event) => {
     const target = event.target;
     if (!(target instanceof Element)) return;
