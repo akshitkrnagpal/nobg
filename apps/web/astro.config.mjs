@@ -1,5 +1,6 @@
 // @ts-check
 
+import { fileURLToPath } from "node:url";
 import { unified } from "@astrojs/markdown-remark";
 import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
@@ -38,6 +39,18 @@ export default defineConfig({
     }),
   ],
   vite: {
+    resolve: {
+      alias: {
+        "lucide-react": fileURLToPath(
+          new URL("./src/components/fumadocs-icons.ts", import.meta.url),
+        ),
+      },
+    },
+    // Apply the icon alias to static HTML as well as hydrated React components.
+    environments: {
+      ssr: { resolve: { noExternal: ["fumadocs-ui", "@fumadocs/base-ui"] } },
+      prerender: { resolve: { noExternal: ["fumadocs-ui", "@fumadocs/base-ui"] } },
+    },
     plugins: [tailwindcss()],
   },
 });

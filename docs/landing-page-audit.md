@@ -26,3 +26,12 @@ Reviewed and updated on 2026-09-17. Scope: homepage structure, messaging, respon
 - axe-core 4.13.0 reported no WCAG 2 A/AA or WCAG 2.1 AA violations at 390px and 1440px. This is an automated check, not a claim of complete accessibility conformance.
 
 The hero remains an illustration rather than evidence of processed-image quality. The image API was not modified, deployed, or tested against paid Cloudflare processing during this audit.
+
+## Copy and icon follow-up
+
+- Removed eyebrow labels, uppercase promotional text, repeated slogans, decorative status dots, and the technology strip.
+- Replaced promotional headings with descriptions of the API, setup, request format, and limits. Simplified the closing section.
+- Replaced interface symbols with Phosphor icons, including Fumadocs navigation, search, headings, and code controls. The Vite alias applies during prerendering and hydration so both render the same icons.
+- Scoped custom focus outlines to landing-page controls and footer links. Fumadocs search now retains its native input styling.
+- Verified mobile navigation, search-result navigation, keyboard comparison, and copy feedback. The page has no horizontal overflow at 320, 390, and 1440px. axe-core reported no WCAG 2 A/AA or WCAG 2.1 AA violations at 390px and 1440px.
+- Lint, Astro typecheck, and production build passed. No API deployment or paid image processing was performed.
