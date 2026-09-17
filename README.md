@@ -1,6 +1,6 @@
 # nobg
 
-[Website](https://nobg-web.akntech.workers.dev) · [Documentation](https://nobg-web.akntech.workers.dev/docs/)
+[Website](https://nobg.akntech.workers.dev) · [Documentation](https://nobg.akntech.workers.dev/docs/)
 
 Background removal in your own Cloudflare account. Send an image to a Hono API and receive a transparent PNG or WebP, using the Cloudflare Images binding.
 
@@ -36,7 +36,7 @@ Tests use mocked Images responses in the Workers runtime. The API build is a Wra
 pnpm run deploy
 ```
 
-This builds and publishes **only the static website** as `nobg-web`. It does not deploy the API or enable paid image processing. The website has no live upload interface.
+This builds and publishes **only the static website** as `nobg`. It does not deploy the API or enable paid image processing. The website has no live upload interface.
 
 ## Self-host the API later
 
