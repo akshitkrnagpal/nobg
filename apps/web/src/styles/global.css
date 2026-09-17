@@ -59,9 +59,10 @@ button {
   display: inline-flex;
   align-items: center;
   color: #18181b;
+  font-family: var(--font-mono);
   font-size: 30px;
-  font-weight: 800;
-  letter-spacing: -1.8px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
   line-height: 1;
 }
 .wordmark span {
