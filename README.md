@@ -66,3 +66,5 @@ The public API includes `GET /api/health` for liveness and `GET /api/openapi.jso
 ## Brand
 
 Always spell the name **nobg**. The wordmark uses charcoal `#18181B` for `no` and teal `#0D9488` for `bg`. The homepage's comparison is an original SVG illustration, not a result produced by the service.
+
+Generated transparent PNG assets: [icon](apps/web/public/brand/nobg-icon-v1.png) and [horizontal logo](apps/web/public/brand/nobg-logo-v1.png). The [generation prompts](docs/brand/imagegen-prompts.md) record the design direction and tool used.
