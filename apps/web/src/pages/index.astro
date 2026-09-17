@@ -1,7 +1,8 @@
 ---
+import { Home } from "@/components/home";
 import Layout from "@/components/layout.astro";
 
-const command = `curl https://YOUR-WORKER.workers.dev/api/v1/remove-background \\\n  -H "Authorization: Bearer $NOBG_API_KEY" \\\n  -F "image=@photo.jpg" \\\n  --output nobg.png`;
+const command = `curl --fail-with-body \\\n  "$NOBG_URL/api/v1/remove-background" \\\n  -H "Authorization: Bearer $NOBG_API_KEY" \\\n  -F "image=@photo.jpg" \\\n  --output nobg.png`;
 const faqs = [
   [
     "What does self-hosted mean here?",
@@ -30,308 +31,291 @@ const faqs = [
   <a class="skip-link" href="#main">
     Skip to content
   </a>
-  <header class="site-header wrap">
-    <a class="wordmark" href="/" aria-label="nobg home">
-      no<span>bg</span>
-      <i aria-hidden="true"></i>
-    </a>
-    <nav aria-label="Main navigation">
-      <a href="#how-it-works">How it works</a>
-      <a href="/docs/">Documentation</a>
-      <a class="nav-cta" href="/docs/quickstart/">
-        Self-host nobg <span aria-hidden="true">↗</span>
-      </a>
-    </nav>
-  </header>
-  <main id="main">
-    <section class="hero wrap">
-      <div class="hero-copy">
-        <div class="eyebrow">
-          <span class="status-dot"></span> YOUR IMAGES. YOUR CLOUDFLARE ACCOUNT.
+  <Home pathname={Astro.url.pathname} params={Astro.params} client:load>
+    <div id="main" tabindex="-1">
+      <section class="hero wrap">
+        <div class="hero-copy">
+          <div class="eyebrow">
+            <span class="status-dot"></span> A BACKGROUND REMOVAL API YOU SELF-HOST
+          </div>
+          <h1>
+            Background removal.
+            <br />
+            <span>On your terms.</span>
+          </h1>
+          <p class="hero-description">
+            Send an image. Get a transparent PNG or WebP. Run the API in your own Cloudflare
+            account, with your own key.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="/docs/quickstart/">
+              Self-host nobg <span aria-hidden="true">↗</span>
+            </a>
+            <a class="text-link" href="/docs/api/">
+              Read the API docs <span aria-hidden="true">→</span>
+            </a>
+          </div>
+          <div class="hero-notes" aria-label="Service features">
+            <span>
+              <b aria-hidden="true">✓</b> One Worker
+            </span>
+            <span>
+              <b aria-hidden="true">✓</b> No storage to set up
+            </span>
+            <span>
+              <b aria-hidden="true">✓</b> Your API key
+            </span>
+          </div>
+          <p class="setup-note">
+            Uses Cloudflare Images.{" "}
+            <a href="/docs/costs/">
+              Check requirements & costs <span aria-hidden="true">↗</span>
+            </a>
+          </p>
         </div>
-        <h1>
-          Keep the subject.
-          <br />
-          <span>
-            Lose the
-            <br class="desktop-break" /> background.
-          </span>
-        </h1>
-        <p class="hero-description">
-          Background removal with a small API
-          <br class="desktop-break" /> and a place of its own. Yours.
-        </p>
-        <div class="hero-actions">
-          <a class="button primary" href="/docs/quickstart/">
-            Self-host nobg <span aria-hidden="true">↗</span>
-          </a>
-          <a class="text-link" href="/docs/api/">
-            Explore the API <span aria-hidden="true">→</span>
-          </a>
-        </div>
-        <div class="hero-notes">
-          <span>
-            <b aria-hidden="true">✓</b> One Worker
-          </span>
-          <span>
-            <b aria-hidden="true">✓</b> No image storage
-          </span>
-          <span>
-            <b aria-hidden="true">✓</b> Your API key
-          </span>
-        </div>
-      </div>
-      <div class="hero-visual">
-        <div class="visual-topline">
-          <span>LESS BACKGROUND. MORE POSSIBILITY.</span>
-          <span aria-hidden="true">✳</span>
-        </div>
-        <div class="comparison" id="comparison" style="--split: 50%">
-          <div class="comparison-scene">
-            <div class="scene-window"></div>
-            <div class="scene-floor"></div>
-            <img
-              src="/plant.svg"
-              width="640"
-              height="720"
-              alt="An illustrated rubber plant in a terracotta pot"
-              fetchpriority="high"
+        <figure class="hero-visual">
+          <div class="visual-topline">
+            <span>THE SUBJECT STAYS. THE BACKGROUND GOES.</span>
+            <span aria-hidden="true">✳</span>
+          </div>
+          <div class="comparison" id="comparison" style="--split: 50%">
+            <div class="comparison-scene">
+              <div class="scene-window"></div>
+              <div class="scene-floor"></div>
+              <img
+                src="/plant.svg"
+                width="640"
+                height="720"
+                alt="An illustrated rubber plant in a terracotta pot"
+                fetchpriority="high"
+              />
+            </div>
+            <div class="comparison-cutout">
+              <img src="/plant.svg" width="640" height="720" alt="" />
+            </div>
+            <span class="image-label before">Original</span>
+            <span class="image-label after">Transparent</span>
+            <div class="comparison-line">
+              <span aria-hidden="true">‹ ›</span>
+            </div>
+            <input
+              id="comparison-control"
+              type="range"
+              min="0"
+              max="100"
+              value="50"
+              aria-label="Compare the illustration with and without a background"
+              aria-describedby="comparison-caption"
+              aria-valuetext="50% background visible"
             />
           </div>
-          <div class="comparison-cutout">
-            <img src="/plant.svg" width="640" height="720" alt="" />
-          </div>
-          <span class="image-label before">BEFORE</span>
-          <span class="image-label after">AFTER</span>
-          <div class="comparison-line">
-            <span aria-hidden="true">‹ ›</span>
-          </div>
-          <input
-            id="comparison-control"
-            type="range"
-            min="5"
-            max="95"
-            value="50"
-            aria-label="Compare the illustration with and without a background"
-          />
+          <figcaption class="visual-caption" id="comparison-caption">
+            <span>Drag or use arrow keys to compare.</span>
+            <span>Illustration, not a processed result.</span>
+          </figcaption>
+        </figure>
+      </section>
+      <div class="stack-strip">
+        <div class="wrap">
+          <span>POWERED BY CLOUDFLARE</span>
+          <p>
+            Built with <strong>Cloudflare Images</strong>
+            <i>+</i>
+            <strong>Workers</strong>
+            <i>+</i>
+            <strong>Hono</strong>
+          </p>
+          <a href="/docs/architecture/">
+            Explore the architecture <span aria-hidden="true">↗</span>
+          </a>
         </div>
-        <div class="visual-caption">
-          <span>
-            <span class="small-dot"></span> Drag to see the difference
-          </span>
-          <span>Illustrative preview</span>
-        </div>
-        <div class="format-tag">
-          <span class="file-icon" aria-hidden="true">
-            ↳
-          </span>
+      </div>
+      <section id="how-it-works" class="section wrap">
+        <div class="section-heading">
           <div>
-            Just the good part.<small>Transparent PNG & WebP</small>
+            <div class="eyebrow">THREE STEPS TO YOUR OWN API</div>
+            <h2>
+              Deploy once. Send an image.
+              <br />
+              Get the cutout.
+            </h2>
           </div>
-          <span class="tag-check" aria-hidden="true">
-            ✓
-          </span>
+          <p>
+            Built for scripts, product workflows,
+            <br />
+            and the backend you already have.
+          </p>
         </div>
-      </div>
-    </section>
-    <div class="stack-strip">
-      <div class="wrap">
-        <span>SMALL BY DESIGN</span>
-        <p>
-          Built with <strong>Cloudflare Images</strong>
-          <i>+</i>
-          <strong>Workers</strong>
-          <i>+</i>
-          <strong>Hono</strong>
-        </p>
-        <a href="/docs/architecture/">
-          See what’s under the hood <span aria-hidden="true">↗</span>
-        </a>
-      </div>
-    </div>
-    <section id="how-it-works" class="section wrap">
-      <div class="section-heading">
-        <div>
-          <div class="eyebrow">FROM UPLOAD TO CUTOUT</div>
+        <div class="steps">
+          <article>
+            <span class="step-number">01 / DEPLOY</span>
+            <div class="step-icon" aria-hidden="true">
+              ↗
+            </div>
+            <h3>Deploy a Worker.</h3>
+            <p>
+              Enable Cloudflare Images, deploy the Hono Worker, and add your API key as a secret.
+            </p>
+            <a href="/docs/quickstart/">
+              Deployment guide <span aria-hidden="true">→</span>
+            </a>
+          </article>
+          <article>
+            <span class="step-number">02 / SEND</span>
+            <div class="step-icon" aria-hidden="true">
+              ↑
+            </div>
+            <h3>Send your image.</h3>
+            <p>
+              Upload a JPEG, PNG, or WebP from your backend. An ordinary HTTP request is all it
+              takes.
+            </p>
+            <a href="/docs/api/">
+              API reference <span aria-hidden="true">→</span>
+            </a>
+          </article>
+          <article>
+            <span class="step-number">03 / KEEP</span>
+            <div class="step-icon checker-icon" aria-hidden="true">
+              ✳
+            </div>
+            <h3>Download the result.</h3>
+            <p>Receive the image bytes directly. Save them to a file or use them in your app.</p>
+            <a href="/docs/examples/">
+              Code examples <span aria-hidden="true">→</span>
+            </a>
+          </article>
+        </div>
+      </section>
+      <section class="api-section wrap">
+        <div class="api-copy">
+          <div class="eyebrow">AN ORDINARY HTTP REQUEST</div>
           <h2>
-            One request.
-            <br />A little less in the picture.
+            A file in.
+            <br />
+            An image back.
           </h2>
-        </div>
-        <p>
-          No dashboard to build around.
-          <br />
-          Just an endpoint for your app.
-        </p>
-      </div>
-      <div class="steps">
-        <article>
-          <span class="step-number">01 / DEPLOY</span>
-          <div class="step-icon" aria-hidden="true">
-            ↗
-          </div>
-          <h3>Give it a home.</h3>
           <p>
-            Deploy a single Worker to your Cloudflare account. Add an API key and make it yours.
+            Use curl, JavaScript, Python, or any HTTP client. No SDK required. Keep your API key on
+            your backend.
           </p>
-          <a href="/docs/quickstart/">
-            Deployment guide <span aria-hidden="true">→</span>
+          <a class="text-link" href="/docs/examples/">
+            See the integration examples <span aria-hidden="true">→</span>
           </a>
-        </article>
-        <article>
-          <span class="step-number">02 / SEND</span>
-          <div class="step-icon" aria-hidden="true">
-            ↑
+          <div class="request-flow">
+            <span>photo.jpg</span>
+            <span aria-hidden="true">→</span>
+            <strong>
+              no<span>bg</span>
+            </strong>
+            <span aria-hidden="true">→</span>
+            <span class="checker-chip">nobg.png</span>
           </div>
-          <h3>Send your image.</h3>
+        </div>
+        <div class="code-window">
+          <div class="code-top">
+            <span>
+              <i></i>
+              <i></i>
+              <i></i>
+            </span>
+            <span>POST /api/v1/remove-background</span>
+            <button id="copy-code" type="button" aria-label="Copy curl example">
+              Copy <span aria-hidden="true">⧉</span>
+            </button>
+          </div>
+          <pre
+            tabindex="0"
+            aria-label="curl request example"
+          ><code id="curl-code">{command}</code></pre>
+          <div class="code-bottom">
+            <span class="small-dot"></span> Example response <span>image/png</span>
+            <span class="code-end">Binary image response</span>
+          </div>
+          <p class="code-caption">
+            Set <code>NOBG_URL</code> to your API URL and <code>NOBG_API_KEY</code> to your secret.
+          </p>
+          <span id="copy-status" class="sr-only" role="status" aria-live="polite"></span>
+        </div>
+      </section>
+      <section class="operating-notes wrap" aria-labelledby="operating-title">
+        <div>
+          <div class="eyebrow">KNOW WHAT YOU'RE RUNNING</div>
+          <h2 id="operating-title">
+            Your deployment.
+            <br />
+            Cloudflare's processing.
+          </h2>
           <p>
-            Upload a JPEG, PNG, or WebP from your backend. An ordinary HTTP request is all it takes.
+            nobg runs in your account. Cloudflare Images handles background removal and bills you
+            directly for usage.
           </p>
-          <a href="/docs/api/">
-            API reference <span aria-hidden="true">→</span>
+          <a class="text-link" href="/docs/architecture/">
+            How requests are handled <span aria-hidden="true">→</span>
           </a>
-        </article>
-        <article>
-          <span class="step-number">03 / KEEP</span>
-          <div class="step-icon checker-icon" aria-hidden="true">
-            ✳
+        </div>
+        <dl>
+          <div>
+            <dt>Input</dt>
+            <dd>JPEG, PNG, WebP</dd>
           </div>
-          <h3>Keep what matters.</h3>
-          <p>
-            Get a PNG or WebP with a transparent background. Ready for your next product, page, or
-            idea.
-          </p>
-          <a href="/docs/examples/">
-            Code examples <span aria-hidden="true">→</span>
+          <div>
+            <dt>Default limits</dt>
+            <dd>10 MiB · 25 megapixels</dd>
+          </div>
+          <div>
+            <dt>Output</dt>
+            <dd>Transparent PNG or WebP</dd>
+          </div>
+          <div>
+            <dt>Storage</dt>
+            <dd>No uploads or results saved by nobg</dd>
+          </div>
+        </dl>
+      </section>
+      <section class="faq wrap">
+        <div>
+          <div class="eyebrow">BEFORE YOU START</div>
+          <h2>A few useful answers.</h2>
+          <a class="text-link" href="/docs/">
+            More in the docs <span aria-hidden="true">→</span>
           </a>
-        </article>
-      </div>
-    </section>
-    <section class="api-section wrap">
-      <div class="api-copy">
-        <div class="eyebrow">FITS RIGHT INTO YOUR STACK</div>
-        <h2>
-          Your image in.
-          <br />
-          Background out.
-        </h2>
-        <p>
-          A file, an API key, and one endpoint.
-          <br />
-          Use the tools you already work with.
-        </p>
-        <a class="text-link" href="/docs/examples/">
-          See the integration examples <span aria-hidden="true">→</span>
-        </a>
-        <div class="request-flow">
-          <span>photo.jpg</span>
-          <span aria-hidden="true">→</span>
-          <strong>
-            no<span>bg</span>
-          </strong>
-          <span aria-hidden="true">→</span>
-          <span class="checker-chip">nobg.png</span>
         </div>
-      </div>
-      <div class="code-window">
-        <div class="code-top">
-          <span>
-            <i></i>
-            <i></i>
-            <i></i>
-          </span>
-          <span>YOUR FIRST REQUEST</span>
-          <button id="copy-code" type="button" aria-label="Copy curl example">
-            Copy <span aria-hidden="true">⧉</span>
-          </button>
+        <div class="faq-list">
+          {faqs.map(([question, answer]) => (
+            <details>
+              <summary>
+                {question}
+                <span aria-hidden="true">+</span>
+              </summary>
+              <p>{answer}</p>
+            </details>
+          ))}
         </div>
-        <pre><code id="curl-code">{command}</code></pre>
-        <div class="code-bottom">
-          <span class="small-dot"></span> 200 OK <span>image/png</span>
-          <span class="code-end">Binary image response</span>
+      </section>
+      <section class="closing wrap">
+        <div class="closing-art" aria-hidden="true">
+          ✳
         </div>
-        <p class="code-caption">Example request · Use your own deployed API URL.</p>
-      </div>
-    </section>
-    <section class="ownership wrap">
-      <div>
-        <div class="eyebrow">A SERVICE YOU CAN CALL YOUR OWN</div>
-        <h2>
-          Less to manage.
-          <br />
-          More in your control.
-        </h2>
-      </div>
-      <div class="ownership-list">
-        <article>
-          <span aria-hidden="true">01</span>
-          <div>
-            <h3>Your account. Your deployment.</h3>
-            <p>Run nobg on your Cloudflare account and change the code when you need to.</p>
-          </div>
-        </article>
-        <article>
-          <span aria-hidden="true">02</span>
-          <div>
-            <h3>Images pass through.</h3>
-            <p>
-              No upload bucket or image history. nobg processes the request and returns the result.
-            </p>
-          </div>
-        </article>
-        <article>
-          <span aria-hidden="true">03</span>
-          <div>
-            <h3>A small, understandable setup.</h3>
-            <p>
-              One Hono Worker with an Images binding. Cloudflare usage is billed directly to you.
-            </p>
-          </div>
-        </article>
-      </div>
-    </section>
-    <section class="faq wrap">
-      <div>
-        <div class="eyebrow">A FEW GOOD QUESTIONS</div>
-        <h2>Before you deploy.</h2>
-        <a class="text-link" href="/docs/">
-          More in the docs <span aria-hidden="true">→</span>
-        </a>
-      </div>
-      <div class="faq-list">
-        {faqs.map(([question, answer]) => (
-          <details>
-            <summary>
-              {question}
-              <span aria-hidden="true">+</span>
-            </summary>
-            <p>{answer}</p>
-          </details>
-        ))}
-      </div>
-    </section>
-    <section class="closing wrap">
-      <div class="closing-art" aria-hidden="true">
-        ✳
-      </div>
-      <div>
-        <div class="eyebrow">MAKE ROOM FOR THE SUBJECT</div>
-        <h2>
-          A little less background.
-          <br />A lot more yours.
-        </h2>
-        <a class="button primary" href="/docs/quickstart/">
-          Get started with nobg <span aria-hidden="true">↗</span>
-        </a>
-      </div>
-    </section>
-  </main>
+        <div>
+          <div class="eyebrow">READY WHEN YOU ARE</div>
+          <h2>
+            Make it part of
+            <br />
+            your next project.
+          </h2>
+          <a class="button primary" href="/docs/quickstart/">
+            Get started with nobg <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+      </section>
+    </div>
+  </Home>
   <footer class="site-footer wrap">
     <a class="wordmark" href="/" aria-label="nobg home">
       no<span>bg</span>
-      <i aria-hidden="true"></i>
     </a>
-    <p>Background removal, on your terms.</p>
+    <p>Self-hosted on Cloudflare.</p>
     <nav aria-label="Footer navigation">
       <a href="/docs/">Docs</a>
       <a href="/docs/api/">API</a>
@@ -344,23 +328,37 @@ const faqs = [
   function setup() {
     const slider = document.querySelector<HTMLInputElement>("#comparison-control");
     const comparison = document.querySelector<HTMLElement>("#comparison");
-    slider?.addEventListener("input", () =>
-      comparison?.style.setProperty("--split", `${slider.value}%`),
-    );
+    if (slider && !slider.dataset.bound) {
+      slider.dataset.bound = "true";
+      slider.addEventListener("input", () => {
+        comparison?.style.setProperty("--split", `${slider.value}%`);
+        slider.setAttribute("aria-valuetext", `${slider.value}% background visible`);
+      });
+    }
     const copy = document.querySelector<HTMLButtonElement>("#copy-code");
-    copy?.addEventListener("click", async () => {
-      const text = document.querySelector("#curl-code")?.textContent;
-      if (!text) return;
-      try {
-        await navigator.clipboard.writeText(text);
-        copy.textContent = "Copied ✓";
-      } catch {
-        copy.textContent = "Select code to copy";
-      }
-      setTimeout(() => {
-        if (copy.isConnected) copy.textContent = "Copy ⧉";
-      }, 2500);
-    });
+    if (copy && !copy.dataset.bound) {
+      copy.dataset.bound = "true";
+      copy.addEventListener("click", async () => {
+        const code = document.querySelector("#curl-code");
+        const status = document.querySelector("#copy-status");
+        if (!code?.textContent || !status) return;
+        try {
+          await navigator.clipboard.writeText(code.textContent);
+          status.textContent = "curl example copied to clipboard.";
+          copy.textContent = "Copied ✓";
+        } catch {
+          const selection = window.getSelection();
+          const range = document.createRange();
+          range.selectNodeContents(code);
+          selection?.removeAllRanges();
+          selection?.addRange(range);
+          status.textContent = "Code selected. Use your keyboard to copy it.";
+        }
+        setTimeout(() => {
+          if (copy.isConnected) copy.textContent = "Copy ⧉";
+        }, 2500);
+      });
+    }
   }
   document.addEventListener("astro:page-load", setup);
 </script>
