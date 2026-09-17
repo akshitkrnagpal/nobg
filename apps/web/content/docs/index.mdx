@@ -1,0 +1,29 @@
+---
+title: Background removal, on your terms.
+description: A small API that runs in your own Cloudflare account.
+---
+
+nobg accepts an image and returns a transparent PNG or WebP. You deploy a Hono Worker, configure an API key, and call it from your backend. Cloudflare Images removes the background with `segment: "foreground"`.
+
+## Start here
+
+- [Self-host nobg](/docs/quickstart/): configure and deploy your API.
+- [API reference](/docs/api/): upload fields, authentication, formats, and errors.
+- [Code examples](/docs/examples/): curl, JavaScript, and Python.
+- [Local development](/docs/local-development/): run the monorepo without paid image processing.
+
+## What you run
+
+The pnpm workspace contains two independently deployable apps. `apps/web` is this static Astro and Fumadocs website. `apps/api` is the Hono service. Only the API needs a Cloudflare Images binding.
+
+There is no database, upload bucket, billing system, or user account system. The operator creates one API key and keeps it in a Worker secret. Images pass through the request and are not saved by nobg.
+
+## What self-hosted means
+
+The code and deployment live under your control. Image processing still runs on Cloudflare's managed Images service. You need a Cloudflare account with the required Images access, and Cloudflare bills your account directly. This is not an offline background removal model.
+
+## Current validation status
+
+The API is implemented and tested locally with mocked Images responses. Background removal against the paid Cloudflare service has **not been validated**. Output quality, production latency, and account-specific availability still need a real deployment check once you enable the service.
+
+The homepage's plant comparison is an illustration, not a measured output from Cloudflare.

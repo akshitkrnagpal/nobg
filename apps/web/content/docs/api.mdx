@@ -1,0 +1,66 @@
+---
+title: API reference
+description: One upload endpoint, with binary images on success and JSON on failure.
+---
+
+## Remove a background
+
+`POST /api/v1/remove-background`
+
+Send `Authorization: Bearer YOUR_API_KEY` and a `multipart/form-data` body. Let your HTTP client generate the multipart boundary.
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `image` | File | Yes | JPEG, PNG, or WebP image |
+| `format` | String | No | `png` by default, or `webp` |
+
+Only these fields are accepted. Duplicate fields are rejected. Remote image URLs and base64 payloads are not supported. This is a nobg API, not a remove.bg compatibility endpoint.
+
+The default input limit is **10 MiB** and the pixel limit is **25 megapixels**. File signatures must match the declared MIME type. When an animated input is accepted by Images, the output is a still image using `anim: false`.
+
+### Success
+
+Status `200` with `Content-Type: image/png` or `image/webp` and `Content-Disposition: attachment; filename="nobg.png"` or `nobg.webp`. The response body contains image bytes, not JSON or a URL. Download it directly.
+
+Responses include `Cache-Control: no-store` and an `X-Request-Id` header. nobg adds no storage or shared cache for image results.
+
+### Errors
+
+```json
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "Provide a valid Bearer API key.",
+    "requestId": "a-request-uuid"
+  }
+}
+```
+
+| Status | Code | Meaning |
+| --- | --- | --- |
+| 400 | `invalid_request` | Missing fields, invalid multipart body, or duplicate/unknown fields |
+| 400 | `invalid_image` | Images could not inspect or decode the file |
+| 401 | `unauthorized` | Missing or incorrect Bearer API key |
+| 404 | `not_found` | Unknown route or unsupported method |
+| 413 | `payload_too_large` | File, request body, or pixel count exceeds the limit |
+| 415 | `unsupported_format` | Unsupported file signature, MIME mismatch, or output format |
+| 429 | `rate_limited` | Rate limiter rejected the request; retry after 60 seconds |
+| 502 | `processing_failed` | Cloudflare Images could not produce the result |
+| 503 | `not_configured` | API key or upload limit is not configured correctly |
+| 500 | `internal_error` | Unexpected service failure |
+
+Do not automatically retry validation or authentication errors. Respect the `Retry-After` header on a `429`. A retry after a processing failure can repeat processing work.
+
+## Health
+
+`GET /api/health` requires no authentication and returns:
+
+```json
+{ "status": "ok", "service": "nobg", "version": "0.1.0" }
+```
+
+This is a liveness check. It does not call Images or verify paid-service access.
+
+## OpenAPI
+
+`GET /api/openapi.json` on your **API host** returns the OpenAPI 3.1 description. It is public and contains no secrets. The documentation website does not run the API.

@@ -1,0 +1,38 @@
+---
+title: Architecture
+description: Two apps, with one Worker for image processing.
+---
+
+```text
+apps/web                       apps/api
+Astro + Fumadocs                Hono + Cloudflare Worker
+  ↓ static build                 ↑ authenticated upload
+Cloudflare static assets         ↓ Images binding
+Landing page + documentation   segment: foreground
+                                 ↓ binary PNG / WebP
+                               Your backend
+```
+
+## Request lifecycle
+
+1. Assign a request ID and disable response caching.
+2. Verify the configured Bearer API key using a timing-safe digest comparison.
+3. Check the Cloudflare rate limiter.
+4. Read the upload with a bounded body size and parse multipart fields.
+5. Validate the image signature, declared format, file size, and pixel count.
+6. Send the bytes through the Images binding using `segment: "foreground"`.
+7. Return the binary image with a download filename.
+
+The service uses the [Cloudflare Images binding](https://developers.cloudflare.com/images/optimization/binding/). Uploads do not need a public URL. Cloudflare documents background removal as the [foreground segmentation option](https://developers.cloudflare.com/images/optimization/features/#segment).
+
+## Data handling
+
+nobg does not save uploads or outputs to R2, D1, KV, or Cloudflare Images storage. It buffers a bounded upload for validation and returns the processed stream. Responses use `no-store`. This describes nobg's behavior; Cloudflare still processes the bytes under its own service policies.
+
+Application error logs contain an event name and request ID. They do not contain image bytes, filenames, keys, or provider error messages. Cloudflare may still record platform request metadata through observability.
+
+## Deployment separation
+
+The website and API have different Wrangler configs and Worker names. Publishing the site cannot deploy the image API. The API has no dependency on the website and can be self-hosted independently.
+
+`packages/contracts` holds shared formats, limits, and error types. The OpenAPI endpoint is built from the same constants used by the handler.

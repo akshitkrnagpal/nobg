@@ -1,0 +1,28 @@
+---
+title: Cloudflare requirements and costs
+description: Understand what you need to enable before deploying the API.
+---
+
+## Website
+
+The landing page and docs are static files. They do not use Cloudflare Images or invoke the background-removal API. Hosting them does not require enabling image processing.
+
+## API
+
+The Worker requires access to Cloudflare Images transformations through the Images binding. Confirm the current plan requirements for your account in Cloudflare before deploying. Enabling a paid service is a separate action from building nobg locally.
+
+Cloudflare bills your account directly. nobg does not add its own credit system or payment layer.
+
+Read the current sources rather than treating a price copied into this repository as a quote:
+
+- [Cloudflare Images pricing](https://developers.cloudflare.com/images/pricing/)
+- [Cloudflare Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/)
+- [Images limits and supported formats](https://developers.cloudflare.com/images/get-started/limits/)
+
+Actual charges depend on the services and plan you enable, transformation usage, and Worker usage. The repository adds no persistent storage requirements.
+
+## Before enabling paid processing
+
+The API has been tested locally with mocks. Real background removal, output quality, latency, and account-specific access have not been validated. Once you choose to enable Images, check those with your own representative sample images.
+
+The rate limiter is approximate and local to Cloudflare locations. It reduces request bursts but is not a strict monthly spending limit.

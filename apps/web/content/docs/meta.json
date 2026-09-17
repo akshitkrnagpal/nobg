@@ -1,0 +1,17 @@
+{
+  "title": "nobg",
+  "pages": [
+    "index",
+    "---Get started---",
+    "quickstart",
+    "local-development",
+    "---Use the API---",
+    "api",
+    "examples",
+    "---Run your own---",
+    "configuration",
+    "architecture",
+    "costs",
+    "troubleshooting"
+  ]
+}

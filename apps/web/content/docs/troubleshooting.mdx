@@ -1,0 +1,44 @@
+---
+title: Troubleshooting
+description: Diagnose configuration and request errors.
+---
+
+## 503 not_configured
+
+Check that `API_KEY` is set for the correct Worker and is a random string of at least 32 characters. The example placeholder is intentionally rejected. Also check that `MAX_UPLOAD_BYTES` is an integer between 1 and 20971520.
+
+## 401 unauthorized
+
+Use the `Authorization: Bearer YOUR_API_KEY` header. Check for extra whitespace, a stale key after rotation, or a key configured on the website instead of the API.
+
+## 400 invalid_request
+
+Send multipart form data with exactly one `image` file. The optional `format` field accepts `png` or `webp`. Do not manually set the multipart boundary when your client creates the form body.
+
+## 400 invalid_image
+
+The Images service could not inspect the image. Try opening and re-exporting it as JPEG, PNG, or WebP. An Images inspection error can also indicate a binding or service problem; check your Cloudflare configuration if valid files all fail.
+
+## 413 payload_too_large
+
+Reduce the file size or image dimensions. The default file cap is 10 MiB and the decoded pixel cap is 25 megapixels. Multipart request overhead is also bounded. See [configuration](/docs/configuration/).
+
+## 415 unsupported_format
+
+Use JPEG, PNG, or WebP and ensure the MIME type matches the bytes. An SVG renamed to `.png` is still an SVG. The output `format` must be `png` or `webp`.
+
+## 429 rate_limited
+
+Wait for the `Retry-After` interval. The default is 30 authenticated attempts per minute per Cloudflare location, shared across this API's clients.
+
+## 502 processing_failed locally
+
+Background segmentation is not available in Cloudflare's offline Images implementation. Local validation and mocked tests can pass while an actual local transform fails. This is expected; the original image is never substituted as a fake result.
+
+## 502 processing_failed after deployment
+
+Check that Images is enabled for the account, the `IMAGES` binding exists, and the required paid access is available. If those are correct, retry with a small, valid image. Keep the `X-Request-Id` when investigating failures. The public health endpoint only checks liveness.
+
+## The website works but the API returns 404
+
+The website is deployed separately. Send image requests to the API Worker's URL, not the documentation site's URL.

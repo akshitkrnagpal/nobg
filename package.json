@@ -1,0 +1,26 @@
+{
+  "name": "nobg",
+  "private": true,
+  "packageManager": "pnpm@11.20.0",
+  "engines": {
+    "node": ">=22.14.0"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter './apps/*' dev",
+    "build": "pnpm --filter @nobg/web build && pnpm --filter @nobg/api build",
+    "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "biome check . && prettier --check \"apps/web/src/**/*.astro\"",
+    "format": "biome check --write . && prettier --write \"apps/web/src/**/*.astro\"",
+    "test": "pnpm --filter @nobg/api test",
+    "deploy": "pnpm --filter @nobg/web run deploy",
+    "preview": "pnpm --filter @nobg/web preview",
+    "deploy:web": "pnpm --filter @nobg/web run deploy"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "prettier": "^3.9.6",
+    "prettier-plugin-astro": "^1.0.0",
+    "typescript": "^5.9.3"
+  }
+}

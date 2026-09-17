@@ -1,0 +1,2 @@
+# Copy to .dev.vars and replace with a randomly generated key.
+API_KEY=replace-with-a-random-key-of-at-least-32-characters

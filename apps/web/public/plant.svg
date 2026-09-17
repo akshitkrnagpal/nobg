@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="720" viewBox="0 0 640 720" fill="none"><title>Rubber plant illustration</title>
+<defs>
+<linearGradient id="pot" x1="218" y1="485" x2="419" y2="638" gradientUnits="userSpaceOnUse"><stop stop-color="#EBCAB1"/><stop offset=".32" stop-color="#D5A782"/><stop offset="1" stop-color="#AE7758"/></linearGradient>
+<linearGradient id="leaf" x1="180" y1="110" x2="376" y2="330" gradientUnits="userSpaceOnUse"><stop stop-color="#729A66"/><stop offset=".5" stop-color="#3D6C4D"/><stop offset="1" stop-color="#183F35"/></linearGradient>
+<linearGradient id="leaf2" x1="420" y1="150" x2="290" y2="370" gradientUnits="userSpaceOnUse"><stop stop-color="#80A16A"/><stop offset=".6" stop-color="#3C7050"/><stop offset="1" stop-color="#234E3C"/></linearGradient>
+<linearGradient id="leaf3" x1="130" y1="350" x2="325" y2="465" gradientUnits="userSpaceOnUse"><stop stop-color="#58865B"/><stop offset="1" stop-color="#173F34"/></linearGradient>
+<filter id="shadow" x="-50%" y="-100%" width="200%" height="300%"><feGaussianBlur stdDeviation="13"/></filter>
+</defs>
+<ellipse cx="324" cy="653" rx="116" ry="13" fill="#182E26" opacity=".16" filter="url(#shadow)"/>
+<path d="M324 530C310 449 338 332 314 185M323 434C279 383 233 376 191 331M324 373C366 336 390 277 419 257M318 300C279 255 256 227 234 204M319 483C359 443 381 426 424 407" stroke="#4C6546" stroke-width="9" stroke-linecap="round"/>
+<path d="M318 248C260 236 245 145 285 84C346 109 374 171 318 248Z" fill="url(#leaf)"/>
+<path d="M319 241C305 193 302 140 285 88" stroke="#9CAB77" stroke-opacity=".6" stroke-width="2"/>
+<path d="M291 291C220 295 158 241 151 169C228 148 291 198 291 291Z" fill="url(#leaf)"/>
+<path d="M284 281C232 232 209 214 155 174" stroke="#A0B17C" stroke-opacity=".5" stroke-width="2"/>
+<path d="M333 331C327 245 382 174 474 167C479 248 429 319 333 331Z" fill="url(#leaf2)"/>
+<path d="M338 324C391 254 428 218 469 173" stroke="#ABC08C" stroke-opacity=".6" stroke-width="2"/>
+<path d="M278 401C202 421 120 377 98 303C170 268 249 304 278 401Z" fill="url(#leaf3)"/>
+<path d="M269 395C212 353 161 333 105 308" stroke="#91AC77" stroke-opacity=".4" stroke-width="2"/>
+<path d="M335 444C357 365 424 322 501 342C488 418 428 461 335 444Z" fill="url(#leaf2)"/>
+<path d="M344 439C397 397 437 374 496 346" stroke="#A3B789" stroke-opacity=".5" stroke-width="2"/>
+<path d="M317 463C247 479 206 455 189 410C246 382 293 399 317 463Z" fill="url(#leaf3)"/>
+<path d="M310 459L194 413" stroke="#9CB27C" stroke-opacity=".4" stroke-width="2"/>
+<path d="M216 504H432L410 629C405 657 248 657 242 629L216 504Z" fill="url(#pot)"/>
+<ellipse cx="324" cy="505" rx="108" ry="28" fill="#E7C6AA"/>
+<ellipse cx="324" cy="505" rx="92" ry="18" fill="#705344"/>
+<ellipse cx="324" cy="507" rx="87" ry="14" fill="#574333"/>
+<path d="M324 510L323 477" stroke="#4C6546" stroke-width="9" stroke-linecap="round"/>
+<path d="M222 518C255 545 392 547 426 518" stroke="#F1D6BF" stroke-opacity=".55" stroke-width="3"/>
+<path d="M258 549L270 627M285 555L291 634M315 558V636M345 558L341 636M374 554L365 633M400 546L387 627" stroke="#9F7156" stroke-opacity=".15" stroke-width="2"/>
+</svg>

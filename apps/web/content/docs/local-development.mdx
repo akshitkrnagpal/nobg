@@ -1,0 +1,47 @@
+---
+title: Local development
+description: Work on the website and Worker without calling paid image processing.
+---
+
+## Set up the workspace
+
+```sh
+pnpm install
+cp apps/api/.dev.vars.example apps/api/.dev.vars
+```
+
+Replace the example value in `.dev.vars` with a randomly generated API key of at least 32 characters. This file is ignored by Git. The supplied placeholder is rejected by the API.
+
+```sh
+pnpm dev
+```
+
+- Website: `http://localhost:4321`
+- Hono API: `http://localhost:8787`
+
+The website does not call the API. You can run either app independently:
+
+```sh
+pnpm --filter @nobg/web dev
+pnpm --filter @nobg/api dev
+```
+
+## Image processing is not simulated as success
+
+The API uses local Wrangler bindings. Cloudflare's offline Images implementation does not support background segmentation. A local upload may return `502 processing_failed` at the transformation step. nobg does not return your original image and pretend its background was removed.
+
+Tests mock the Images binding to verify HTTP behavior without sending images to Cloudflare. They do not validate segmentation quality or production availability. No remote validation has been performed for this release.
+
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| `pnpm check` | Lint, typecheck, and run API tests |
+| `pnpm build` | Build the static website and dry-run the API bundle |
+| `pnpm test` | Run local API tests |
+| `pnpm format` | Format supported source files |
+| `pnpm preview` | Preview the built website locally |
+| `pnpm run deploy` | Build and publish the website only |
+| `pnpm --filter @nobg/api types` | Regenerate types after editing API Wrangler bindings |
+
+`pnpm build` does not deploy either app. The API's `dev` command uses `--local`; no remote bindings are configured.
